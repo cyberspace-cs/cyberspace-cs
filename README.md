@@ -93,6 +93,12 @@
 
 ## 🚀 精选项目
 
+### ☁️ 专属 Skill 集合（clouds）
+
+| 项目 | 说明 |
+| --- | --- |
+| [**clouds**](https://github.com/cyberspace-cs/clouds) | 我的专属 Skill 集合（Everything is Skill-Composable）：代码评审 / 刷题教练 / 页面上线 / 主页美化 / 简历制作 / 项目拆解 / 界面设计，7 个中文目录即装即用 |
+
 ### 自研项目
 
 | 项目 | 说明 | 技术栈 |
