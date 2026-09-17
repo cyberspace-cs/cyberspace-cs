@@ -1,7 +1,7 @@
 # 👋 Hi, I'm buleboy（cyberspace-cs）
 
 > 专注 AI Agent 与 LLM 应用开发的工程师，从 0 到 1 造轮子，也爱拆解前沿开源项目。
-> 在这里，你会看到我的项目实战、学习笔记与 Agent 工程实践。
+> 在这里，你会看到我的项目实战、学习笔记、Agent 工程实践与在线作品。
 
 <div align="center">
 
@@ -32,6 +32,46 @@
 | 🧠 **LLM 工程** | 关注模型路由、RAG 知识库、推理优化与多模型协同 |
 | 💼 **求职备战** | AI Agent / LLM 方向面试题、简历模板与笔试刷题系统性整理 |
 | 🔧 **造轮子** | 把学到的 Agent 原理动手实现成自己的项目 |
+
+---
+
+## 🌐 在线展示页面（GitHub Pages）
+
+以下站点均已部署上线，可在线直接体验 👇
+
+| 展示页面 | 地址 | 说明 |
+| --- | --- | --- |
+| 🏠 [**个人简历主页**](https://cyberspace-cs.github.io/personal-portfolio/) | `cyberspace-cs.github.io/personal-portfolio` | 个人作品集：LLM Agent Engineer 简历网站，含项目 Demo 导航 |
+| 🚀 [**Zero2Leetcode**](https://cyberspace-cs.github.io/zero2Leetcode/) | `cyberspace-cs.github.io/zero2Leetcode` | 从零到 LeetCode 刷题平台：学习路线 + 在线练习场 + ACM 模拟 |
+| 👾 [**数字分身 Digital Avatar**](https://cyberspace-cs.github.io/digital-avatar/) | `cyberspace-cs.github.io/digital-avatar` | Live2D 互动数字人 WebApp |
+
+---
+
+## 📦 个人简历项目（personal-portfolio）
+
+[personal-portfolio](https://github.com/cyberspace-cs/personal-portfolio) 是我的个人简历网页 + 项目集散地，里面聚合了 **11 个 AI Agent / LLM 工程实战项目**：
+
+### 🌟 重点项目
+
+| 项目 | 一句话说明 | 亮点 |
+| --- | --- | --- |
+| [**Audit-AIOPS**](https://github.com/cyberspace-cs/personal-portfolio/tree/main/Audit-AIOPS) | 审计智能一体化运维平台助手 | Agent 编排 + 混元/通义大模型，四大痛点一站式解决 |
+| [**auditscope**](https://github.com/cyberspace-cs/personal-portfolio/tree/main/auditscope) | 「审查查」审计尽调信息查询平台 | 对标企查查/天眼查，LLM 查询理解 + RAG 证据问答 |
+| [**competition-hub**](https://github.com/cyberspace-cs/personal-portfolio/tree/main/competition-hub) | 竞赛雷达：技术竞赛聚合平台 | 黑客松/Kaggle/CTF/AI 竞赛聚合 + 自动采集 |
+| [**cs-frontier-hub**](https://github.com/cyberspace-cs/personal-portfolio/tree/main/cs-frontier-hub) | CS 前沿知识聚合平台 | Agent/LLM/GPU 算子/顶会信息聚合 + 动态架构图 |
+| [**shuati-coach**](https://github.com/cyberspace-cs/personal-portfolio/tree/main/shuati-coach) | 刷题教练：AI 刷题辅导 | 岗位调研 → 项目匹配 → 技术提取三步法 |
+
+### 💼 五大可落地 AI 应用（projects/）
+
+| 项目 | 核心能力 |
+| --- | --- |
+| [**AI Code Copilot**](https://github.com/cyberspace-cs/personal-portfolio/tree/main/projects/ai-code-copilot) | 代码解释 / 审查 / 生成 / 补全（AST 静态分析） |
+| [**LLM Finetune Studio**](https://github.com/cyberspace-cs/personal-portfolio/tree/main/projects/llm-finetune-studio) | 大模型微调工作台：LoRA / QLoRA / DoRA 全流程 |
+| [**Multimodal Chat Hub**](https://github.com/cyberspace-cs/personal-portfolio/tree/main/projects/multimodal-chat-hub) | 文本 + 视觉 + 语音三模态对话机器人 |
+| [**RAG Knowledge Hub**](https://github.com/cyberspace-cs/personal-portfolio/tree/main/projects/rag-knowledge-hub) | 企业级 RAG 问答：混合检索 + 阈值门控防幻觉 |
+| [**Smart Service Desk**](https://github.com/cyberspace-cs/personal-portfolio/tree/main/projects/smart-service-desk) | 智能客服：意图路由 + FAQ 匹配 + 工单系统 |
+
+> 💡 以上项目**无需 API Key / GPU / 向量数据库**即可本地运行演示，前后端分离，蓝白科技感统一风格。
 
 ---
 
