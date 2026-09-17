@@ -35,6 +35,22 @@
 
 ---
 
+## 🕵️ 重点项目：ShiftX · 夜班侦探（Night Shift）
+
+> 🏆 **AdventureX 2026 获奖项目**：Amazon Quick × First Prize + Injective Blockchain × AI Innovation Award
+> 🎮 **你睡着以后，他才开始工作。** —— 与你轮班生活的异步侦探游戏
+
+| 维度 | 说明 |
+| --- | --- |
+| 🌐 [**在线预览**](https://www.shiftx.top/) | 可直接游玩，体验完整五夜循环 |
+| 💡 **核心创意** | 白天整理线索、安排调查方向，睡觉后侦探林渡替玩家进入城市调查；**休息不是空白，而是游戏输入** |
+| 🔒 **产品理念** | Local-first（无账号/数据库/API Key 可玩）+ 确定性悬疑 + 受约束 AI + 睡眠短不失败 |
+| 🏗️ **架构亮点** | Next.js 16 + React 19 + Zustand 状态机（day→ready→night→morning→ending）；一套运行时承载 5 套案件（CampaignManifest）；Web/移动端/桌宠/硬件/区块链多端复用 |
+| 📚 [**学习指南**](https://github.com/cyberspace-cs/night-shift/blob/main/SHIFTX_LEARNING_GUIDE.md) | 仓库内中文拆解：产品创意 → 玩法 → 代码架构 → 技术栈 → 学习路线 |
+| 📦 [**源码仓库**](https://github.com/cyberspace-cs/night-shift) | 完整开源实现（fork 自 4MaticLab/night-shift） |
+
+---
+
 ## 🌐 在线展示页面（GitHub Pages）
 
 以下站点均已部署上线，可在线直接体验 👇
