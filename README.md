@@ -103,6 +103,9 @@
 
 | 项目 | 说明 | 技术栈 |
 | --- | --- | --- |
+| [**diy-agent-harness**](https://github.com/cyberspace-cs/diy-agent-harness) | 从 0 手搓 AI Agent 操作系统：Agent Loop + 会话 + 记忆 + 工具 + RSI 自改进 + 上下文压缩 + 技能加载 + MCP 连接 | Python |
+| [**competition-hub**](https://github.com/cyberspace-cs/competition-hub) | 竞赛雷达：Kaggle / ACM / NOI / Codeforces / 黑客松 实时竞赛追踪平台 | Python / HTML |
+| [**adventurex-2026**](https://github.com/cyberspace-cs/adventurex-2026) | AdventureX 2026 获奖项目学习指南：6 个官方画廊项目拆解 | Markdown |
 | [**zero2Leetcode**](https://github.com/cyberspace-cs/zero2Leetcode) | 从零基础 Python 到企业笔试机试的系统性刷题指南：6 阶段学习路线 + 116 道 LeetCode Hot 100 在线练习场 + ACM 模拟 + AI 编程教练 | Python / HTML |
 | [**digital-avatar**](https://github.com/cyberspace-cs/digital-avatar) | 数字人 WebApp，基于 Live2D 模型的互动数字人前端 | TypeScript |
 | [**personal-portfolio**](https://github.com/cyberspace-cs/personal-portfolio) | 个人简历网页 + 审计智能体平台（Audit-AIOPS / auditscope），含 Agent 架构与 LLM 调用链路实战 | HTML / Python |
@@ -124,6 +127,15 @@
 | [**OfferPilot**](https://github.com/cyberspace-cs/OfferPilot) | 面向 AI Agent / LLM 工程面试的智能诊断 Agent |
 | [**learn-workbuddy**](https://github.com/cyberspace-cs/learn-workbuddy) | 从 0 复刻 WorkBuddy 风格桌面 AI 助手：24 章 Python 教程 |
 | [**AgentGuide**](https://github.com/cyberspace-cs/AgentGuide) | AI Agent 开发指南：LangGraph 实战 + 高级 RAG + 面试题库 |
+
+---
+
+## 🌐 本地服务公网地址
+
+| 服务 | 地址 | 说明 |
+| --- | --- | --- |
+| 🖥️ **Sandbox 公网 IP** | `9.134.151.207` | 开发环境公网 IP |
+| 🌐 **Web 服务** | `http://9.134.151.207:8080` | 本地 Web 服务端口 |
 
 ---
 
