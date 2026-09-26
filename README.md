@@ -62,6 +62,7 @@
 | [**jev-chat-jarvis**](https://github.com/cyberspace-cs/jev-chat-jarvis) | 装在手机上的对话副驾：微信/QQ/飞书里读懂对方、给出候选回复 | Python |
 | [**jev-agent-routing**](https://github.com/cyberspace-cs/jev-agent-routing) | DIY Jev 快速决策层：10x faster, 10x cheaper | Python |
 | [**awesome-jev**](https://github.com/cyberspace-cs/awesome-jev) | Jev 生态精选：项目、集成、讨论合集 | Markdown |
+| [**llm2jev**](https://github.com/cyberspace-cs/llm2jev) | 🏠 本地版 Jev 决策引擎：纯本地跑，不依赖云端，支持多模态 | Python |
 
 ---
 
