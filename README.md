@@ -1,4 +1,4 @@
-# 👋 Hi, I'm buleboy（cyberspace-cs）
+# 👋 Hi, I'm Friday（cyberspace-cs）
 
 > 专注 AI Agent 与 LLM 应用开发的工程师，从 0 到 1 造轮子，也爱拆解前沿开源项目。
 > 在这里，你会看到我的项目实战、学习笔记、Agent 工程实践与在线作品。
