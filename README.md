@@ -148,7 +148,7 @@
 | 服务 | 地址 | 说明 |
 | --- | --- | --- |
 | 🌍 **个人主页** | [taoxie.vip](https://taoxie.vip/) | 自定义域名，公网可访问 |
-| 💬 **Jev 对话副驾** | [taoxie.vip/jev/](https://taoxie.vip/jev/) | 微信式多角色对话，Jev 实时分析语气风险 |
+| 💬 **Jev 对话助手** | [taoxie.vip/jev/](https://taoxie.vip/jev/) | 微信式多角色对话，Jev 实时分析语气风险 |
 
 ---
 
