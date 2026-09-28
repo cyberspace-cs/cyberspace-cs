@@ -95,16 +95,17 @@ def inject_reentrancy(clean_source: str):
 class ReentrancyInjector(IssueOperator):
     name = "reentrancy-injector"
 
-    def __init__(self, swc: str = "SWC-107", seed: int = 42, **config):
+    def __init__(self, swc: str = "SWC-107", seed: int = 42, start_index: int = 0, **config):
         super().__init__(**config)
         self.swc = swc
         self.seed = seed
+        self.start_index = start_index
 
     def run(self, records):
         out = []
         for n, rec in enumerate(records):
             planted, (start_line, end_line) = inject_reentrancy(rec["clean_source"])
-            sample_id = f"sample-{n + 1:04d}"
+            sample_id = f"sample-{self.start_index + n + 1:04d}"
             issue = Issue(
                 issue_id=f"{sample_id}-reentrancy",
                 sample_id=sample_id,

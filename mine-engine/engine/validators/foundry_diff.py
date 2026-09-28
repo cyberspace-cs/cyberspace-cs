@@ -1,11 +1,11 @@
-"""IssueValidator：基于 Foundry 的差分验证。
+"""IssueValidator：基于 Foundry 的差分验证（领域无关、支持任意算子）。
 
-做法（对每条样本）：
-  1) 把算子生成的埋雷源码与手写“黄金版”做归一化等价比较
+对每条样本：
+  1) 按 planted_contract_name 找到手写“黄金版”，做归一化等价比较
      （忽略注释与空白，只比代码结构）；
-  2) 临时用算子输出覆盖 src/planted/VaultPlanted.sol，运行 `forge test`：
+  2) 临时用算子输出覆盖该黄金文件，运行 `forge test`：
        必须全部通过 —— happy-path 全过、健康版攻击失败、埋雷版攻击成功；
-  3) 无论成功与否，恢复黄金版。
+  3) 无论成功与否，恢复黄金文件。
 """
 
 from __future__ import annotations
@@ -53,7 +53,9 @@ class FoundryDiffValidator(IssueValidator):
         super().__init__(**config)
         self.root = Path(root)
         self.forge = forge_exe
-        self.planted_path = self.root / "src" / "planted" / "VaultPlanted.sol"
+
+    def _golden_path(self, planted_contract_name: str) -> Path:
+        return self.root / "src" / "planted" / f"{planted_contract_name}.sol"
 
     def _run_forge(self):
         env = dict(os.environ)
@@ -69,19 +71,19 @@ class FoundryDiffValidator(IssueValidator):
         return ok, log
 
     def run(self, records):
-        golden = self.planted_path.read_text(encoding="utf-8")
-        golden_norm = normalize_source(golden)
-
         for rec in records:
+            golden_path = self._golden_path(rec["planted_contract_name"])
+            golden = golden_path.read_text(encoding="utf-8")
+
             rec["matches_golden"] = (
-                normalize_source(rec["planted_source"]) == golden_norm
+                normalize_source(rec["planted_source"]) == normalize_source(golden)
             )
             try:
-                self.planted_path.write_text(rec["planted_source"], encoding="utf-8")
+                golden_path.write_text(rec["planted_source"], encoding="utf-8")
                 ok, log = self._run_forge()
                 rec["valid"] = ok
                 rec["validation_log"] = log.strip()
             finally:
-                # 始终恢复手写黄金版
-                self.planted_path.write_text(golden, encoding="utf-8")
+                # 始终恢复手写黄金文件
+                golden_path.write_text(golden, encoding="utf-8")
         return records

@@ -1,0 +1,28 @@
+{
+  "sample_id": "sample-0002",
+  "clean": "clean/Ownable.sol",
+  "planted": "planted/OwnablePlanted.sol",
+  "ground_truth_types": [
+    "access_control"
+  ],
+  "issues": [
+    {
+      "issue_id": "sample-0002-access-control",
+      "sample_id": "sample-0002",
+      "vuln_type": "access_control",
+      "swc": "SWC-105",
+      "severity": "high",
+      "location": {
+        "file": "planted/OwnablePlanted.sol",
+        "function": "modifier onlyOwner",
+        "start_line": 17,
+        "end_line": 19
+      },
+      "difficulty": 1,
+      "poc": "OwnableAccessControlPoC.t.sol::test_AccessControl_Planted_NonOwnerSucceeds",
+      "discovery_hint": "检查 onlyOwner modifier 是否真的校验了 msg.sender == owner",
+      "operator": "AccessControlInjector",
+      "seed": 42
+    }
+  ]
+}
