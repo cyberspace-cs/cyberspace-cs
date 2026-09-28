@@ -76,6 +76,7 @@
 | [**pear-multi-agent-debate**](https://github.com/cyberspace-cs/pear-multi-agent-debate) | PEAR 自适应路由多智能体辩论（已 fork） | Python |
 | [**RSIAgent**](https://github.com/cyberspace-cs/RSIAgent) | 递归自改进多 Agent 框架 | Python |
 | [**seven_-audit**](https://github.com/cyberspace-cs/seven_-audit) | 可验证审计演化 Harness，RSI 递归自改进 | Python |
+| [**mine-engine**](https://github.com/cyberspace-cs/cyberspace-cs/tree/main/mine-engine) | 动态对抗审计考试埋雷引擎：健康合约→自动埋雷→差分 PoC→报告判分（recall/precision 抗刷分） | Solidity / Python |
 
 ---
 
