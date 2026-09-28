@@ -1,4 +1,4 @@
-# mine-engine · 动态对抗审计考试的埋雷引擎（M0–M2）
+# mine-engine · 动态对抗审计考试的埋雷引擎（M0–M3）
 
 把「动态对抗考试 / Adaptive Verifier」落到**智能合约审计**垂直场景的最小可用引擎：
 自动在**健康合约**上做一次最小化、可复现的程序变换（埋雷），用**差分 PoC**
@@ -78,10 +78,21 @@ forge test
 
   precision 与 recall 同时计分，误报被惩罚，防止「全报一遍」刷分。
 
-## 下一步（M3+）
+## M3 批量生成
 
-- **M3 批量生成**：一条命令按 (合约 × 算子 × 种子) 生成 N 个差分通过样本，
-  输出 index.jsonl 与有效率报告，固定种子可复现；
+```shell
+py batch_generate.py
+```
+
+- 遍历 `(健康合约 × 埋雷算子)` 组合，逐条做 Foundry 差分验证；
+  通过则落盘 `datasets/sample-XXXX/`，失败自动丢弃并记录；
+- 产出 `datasets/index.jsonl`（每行一个样本，含 contract/vuln/swc/severity/难度/路径/validated）；
+- 当前 2 组合 **差分通过 2/2（有效率 100%）**；
+- 固定 seed，两次运行 `index.jsonl` 的 SHA256 完全一致（**可复现**）；
+- 新增算子只需在 `registry` 注册并在 `batch_generate.py` 的 `COMBOS` 加一行，即可线性扩充。
+
+## 下一步（M6+）
+
 - **M6 真实审计 Agent harness + 自动判分**：接 OpenAI 兼容 LLM、给工具
   （读文件/grep/forge test），标准化报告，跑 ≥2 模型 baseline + 全报对照；
 - 扩算子：unchecked call（SWC-104）、tx.origin（SWC-115）、delegatecall（SWC-112）等；
