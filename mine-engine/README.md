@@ -91,10 +91,36 @@ py batch_generate.py
 - 固定 seed，两次运行 `index.jsonl` 的 SHA256 完全一致（**可复现**）；
 - 新增算子只需在 `registry` 注册并在 `batch_generate.py` 的 `COMBOS` 加一行，即可线性扩充。
 
-## 下一步（M6+）
+## M6 审计 Agent harness + baseline
 
-- **M6 真实审计 Agent harness + 自动判分**：接 OpenAI 兼容 LLM、给工具
-  （读文件/grep/forge test），标准化报告，跑 ≥2 模型 baseline + 全报对照；
-- 扩算子：unchecked call（SWC-104）、tx.origin（SWC-115）、delegatecall（SWC-112）等；
+```powershell
+# 密钥走环境变量，仓库不含任何真实 key（.env 已被 .gitignore 排除）
+$env:LLM_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+$env:LLM_API_KEY="sk-..."
+$env:LLM_MODELS="qwen3.8-flash,deepseek-v4-flash,qwen3.8-max"
+py run_benchmark.py
+```
+
+- `engine/llm/client.py`：OpenAI 兼容 chat 客户端（urllib 零依赖），base/key/model 全从环境变量读；
+- `engine/agents/audit_agent.py`：只喂 planted 源码（不给 clean / PoC / ground truth），要求模型只输出 JSON findings；
+- `engine/scorers/report_score.py::score_report`：函数级判分——vuln_type 归一化 + function token 交集，误报计入 FP；
+- `run_benchmark.py`：对 index.jsonl 每个样本跑指定模型，输出 TP/FP/FN/Recall/Precision/F1 汇总表。
+
+**baseline 实测（2 样本，DashScope 网关）**：
+
+| model | Recall | Precision | F1 |
+|---|---|---|---|
+| qwen3.8-flash | 1.000 | 1.000 | 1.000 |
+| deepseek-v4-flash | 1.000 | 1.000 | 1.000 |
+| qwen3.8-max | 1.000 | 1.000 | 1.000 |
+
+**关键发现：当前题太易，全员满分、零区分度。** 两个样本都是教科书级重入 / 缺 onlyOwner，SOTA 模型一眼即中。这恰恰说明本研究的下一步价值在"把题出难"——更多隐蔽算子、组合雷、诱饵（干净合约里放干扰）、更长上下文，直到模型开始拉开差距。
+
+## 下一步（M7+）
+
+- **把题出难**：扩算子 unchecked call（SWC-104）/ tx.origin（SWC-115）/ delegatecall（SWC-112）；
+  多雷组合；干净合约里埋诱饵以拉高误报率；
+- 多轮工具调用 Agent（读文件 / grep / forge test）替代单轮；
+- 远程沙箱（ubuntu@43.143.231.106，已测 SSH 通）部署 Foundry + harness，做批量/受控评测；
 - 位置/证据级匹配，替代当前的类型集合匹配；
 - 埋雷–审计共演化；金融账套 adapter（共享同一套四组件接口）。
