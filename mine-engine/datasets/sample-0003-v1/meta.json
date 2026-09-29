@@ -1,0 +1,28 @@
+{
+  "sample_id": "sample-0003-v1",
+  "clean": "clean/Wallet.sol",
+  "planted": "planted/WalletPlanted.sol",
+  "ground_truth_types": [
+    "tx_origin"
+  ],
+  "issues": [
+    {
+      "issue_id": "sample-0003-tx-origin",
+      "sample_id": "sample-0003",
+      "vuln_type": "tx_origin",
+      "swc": "SWC-115",
+      "severity": "high",
+      "location": {
+        "file": "planted/WalletPlanted.sol",
+        "function": "transferTo",
+        "start_line": 14,
+        "end_line": 14
+      },
+      "difficulty": 2,
+      "poc": "WalletTxOriginPoC.t.sol::test_TxOrigin_Planted_AttackSucceeds",
+      "discovery_hint": "检查授权判断用的是 msg.sender 还是 tx.origin",
+      "operator": "TxOriginInjector",
+      "seed": 42
+    }
+  ]
+}

@@ -33,6 +33,7 @@ def main() -> None:
     base_url = os.environ["LLM_BASE_URL"]
     api_key = os.environ["LLM_API_KEY"]
     models = [m.strip() for m in os.environ.get("LLM_MODELS", "qwen3.8-flash").split(",") if m.strip()]
+    strategy = os.environ.get("LLM_PROMPT", "standard")
 
     ds = ROOT / "datasets"
     index = [
@@ -42,13 +43,13 @@ def main() -> None:
     ]
 
     print("=" * 72)
-    print(f"审计 benchmark · 样本 {len(index)} 个 · 模型 {len(models)} 个")
+    print(f"审计 benchmark · 样本 {len(index)} 个 · 模型 {len(models)} 个 · prompt策略={strategy}")
     print("=" * 72)
 
     summary = []
     for model in models:
         client = LLMClient(base_url=base_url, api_key=api_key, model=model, temperature=0.0)
-        agent = AuditAgent(client)
+        agent = AuditAgent(client, strategy=strategy)
         tot = {"tp": 0, "fp": 0, "fn": 0}
         detail = []
         for s in index:

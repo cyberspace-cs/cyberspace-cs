@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import sys
 from collections import Counter
@@ -105,10 +106,35 @@ def main() -> None:
 
     # 2) 差分验证（只对有雷样本；诱饵已直接 valid）
     to_validate = [r for r in raw if r["issues"]]
-    validated = {r["sample_id"]: r for r in validator.run(to_validate)}
+    validated_map = {r["sample_id"]: r for r in validator.run(to_validate)}
     for idx, rec in enumerate(raw):
-        if rec["sample_id"] in validated:
-            raw[idx] = validated[rec["sample_id"]]
+        if rec["sample_id"] in validated_map:
+            raw[idx] = validated_map[rec["sample_id"]]
+
+    # 2b) 可选：LLM 变体算子（DataFlow PromptedGenerator）。
+    #     环境变量 LLM_VARIATIONS>=1 且配了 LLM_API_KEY 时开启；变体再过同一差分闸门。
+    n_var = int(os.environ.get("LLM_VARIATIONS", "0"))
+    if n_var > 0 and os.environ.get("LLM_API_KEY"):
+        from engine.llm import LLMClient
+        from engine.operators.variation import VariationOperator
+
+        good = [r for r in raw if r.get("valid") and r["issues"]]
+        vary = VariationOperator(LLMClient(), k=n_var)
+        variants = vary.run(good)
+        new_variants = [r for r in variants if r.get("variation")]
+        print(f"  [变体] 请求生成 {len(new_variants)} 个 LLM 变体，过差分闸门中...")
+        if new_variants:
+            vmap = {r["sample_id"]: r for r in validator.run(new_variants)}
+            for r in new_variants:
+                checked = vmap.get(r["sample_id"], r)
+                if checked.get("valid"):
+                    raw.append(checked)
+
+    # 2c) 去重（filtering operator）：normalize 后指纹去重
+    from engine.validators.dedup import dedup
+    raw, dropped_dup = dedup(raw)
+    if dropped_dup:
+        print(f"  [去重] 丢弃 {len(dropped_dup)} 个语义重复样本")
     validated = raw
 
     # 3) 通过则落盘；失败则丢弃并记录

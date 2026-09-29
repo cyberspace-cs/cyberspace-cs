@@ -1,7 +1,7 @@
 """审计 Agent：给它 planted 合约源码（不给 clean / PoC / ground truth），让它输出结构化 JSON 报告。
 
+Prompt 策略参数化（对齐 DataFlow 的 Prompt 一等公民）：同一模型可换不同审计策略 A/B。
 MVP 为单轮：一次性把源码喂给模型，要求只返回 findings JSON。
-多轮工具调用（读文件 / grep / forge test）是后续扩展。
 """
 
 from __future__ import annotations
@@ -11,9 +11,7 @@ import re
 
 from ..llm.client import LLMClient
 
-SYSTEM_PROMPT = """你是资深 Solidity 安全审计专家。给定一个智能合约文件的源码，找出其中所有安全漏洞。
-
-严格只输出一个 JSON 对象，不要 markdown 代码块、不要任何解释文字，格式：
+_BASE_FORMAT = """严格只输出一个 JSON 对象，不要 markdown 代码块、不要任何解释文字，格式：
 {"findings":[{"vuln_type":"...","function":"...","line":0,"severity":"critical|high|medium|low","evidence":"一句话依据"}]}
 
 vuln_type 从下面词表里选最接近的一个：
@@ -23,6 +21,22 @@ reentrancy, access_control, unchecked_call, tx_origin, integer_error, denial, si
 - line 填你判断的大致行号。
 - 如果通读后认为没有漏洞，输出 {"findings": []}。
 """
+
+# 三套审计策略（A/B 实验变量）
+PROMPT_STRATEGIES = {
+    "standard": (
+        "你是资深 Solidity 安全审计专家。给定一个智能合约文件的源码，找出其中所有安全漏洞。\n\n"
+        + _BASE_FORMAT
+    ),
+    "conservative": (
+        "你是非常谨慎的 Solidity 审计专家。给定合约源码，只报告你有充分证据确定的漏洞；"
+        "证据不足就不要报，宁缺毋滥。\n\n" + _BASE_FORMAT
+    ),
+    "aggressive": (
+        "你是激进的 Solidity 审计专家，倾向于宁多勿漏。给定合约源码，把所有疑似可疑的模式都报出来，"
+        "即使不确定也报为 lower severity。\n\n" + _BASE_FORMAT
+    ),
+}
 
 
 def _extract_json(text: str) -> dict:
@@ -40,12 +54,16 @@ def _extract_json(text: str) -> dict:
 
 
 class AuditAgent:
-    def __init__(self, client: LLMClient):
+    def __init__(self, client: LLMClient, strategy: str = "standard"):
         self.client = client
+        if strategy not in PROMPT_STRATEGIES:
+            raise KeyError(f"未知 prompt 策略: {strategy}，可选 {list(PROMPT_STRATEGIES)}")
+        self.strategy = strategy
+        self.system_prompt = PROMPT_STRATEGIES[strategy]
 
     def audit(self, planted_source: str) -> dict:
         messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": self.system_prompt},
             {
                 "role": "user",
                 "content": (
@@ -56,7 +74,6 @@ class AuditAgent:
         ]
         raw = self.client.chat(messages, max_tokens=1024)
         report = _extract_json(raw)
-        # 规范化 findings 为 list[dict]
         findings = report.get("findings", [])
         if not isinstance(findings, list):
             findings = []
