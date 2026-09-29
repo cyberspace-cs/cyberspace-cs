@@ -106,15 +106,16 @@ py run_benchmark.py
 - `engine/scorers/report_score.py::score_report`：函数级判分——vuln_type 归一化 + function token 交集，误报计入 FP；
 - `run_benchmark.py`：对 index.jsonl 每个样本跑指定模型，输出 TP/FP/FN/Recall/Precision/F1 汇总表。
 
-**baseline 实测（4 样本：3 雷 reentrancy/access_control/tx_origin + 1 诱饵 Station，DashScope 网关）**：
+**baseline 实测（7 样本：3 雷×{原题,LLM变体} + 1 诱饵，DashScope 网关，standard prompt）**：
 
 | model | TP | FP | FN | Recall | Precision | F1 |
 |---|---|---|---|---|---|---|
-| qwen3.8-flash | 3 | 0 | 0 | 1.000 | 1.000 | 1.000 |
-| deepseek-v4-flash | 2 | 2 | 1 | 0.667 | 0.500 | 0.571 |
-| qwen3.8-max | 3 | 0 | 0 | 1.000 | 1.000 | 1.000 |
+| qwen3.8-flash | 6 | 0 | 0 | 1.000 | 1.000 | 1.000 |
+| deepseek-v4-flash | 6 | 0 | 0 | 1.000 | 1.000 | 1.000 |
+| deepseek-v4-pro | 6 | 0 | 0 | 1.000 | 1.000 | 1.000 |
+| qwen3.8-max | 6 | 2 | 0 | 1.000 | 0.750 | 0.857 |
 
-**benchmark 首次拉开差距**：deepseek-v4-flash 在 access_control 题上既漏报（没认出 onlyOwner 校验被删）又误报（多报 2 处），F1 掉到 0.571；qwen 系全满分。诱饵题（Station：low-level call 但已 require 检查）三模型均未误报——说明这题对当前 SOTA 仍偏易，但 access_control 的"空 modifier"陷阱已能区分模型。
+**发现**：① deepseek-v4-pro（官方真实模型名，V4-Pro-0813）满分；② 上次 deepseek-v4-flash 翻车这次满分，说明单次跑有随机性，baseline 需多次取平均；③ LLM 变体题让 qwen3.8-max 误报 2 处（precision 0.75）——改写后的代码让大模型过度敏感。区分度刚起步，题还要继续加难。
 
 ## 下一步（M7+）
 
