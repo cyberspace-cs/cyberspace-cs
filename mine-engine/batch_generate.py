@@ -29,9 +29,12 @@ from engine.validators import FoundryDiffValidator
 
 
 # (健康合约名, 健康源码相对 src/ 的路径, 漏洞类型, 默认难度 1-5)
+# vuln_type=None 表示“诱饵样本”：planted 就是干净合约，ground truth 无雷，专打误报。
 COMBOS = [
     ("Vault", "Vault.sol", "reentrancy", 2),
     ("Ownable", "Ownable.sol", "access_control", 1),
+    ("Wallet", "Wallet.sol", "tx_origin", 2),
+    ("Station", "Station.sol", None, 0),
 ]
 
 SEED = 42
@@ -73,28 +76,50 @@ def main() -> None:
     print(f"批量生成 · seed={SEED} · 组合数={len(COMBOS)}")
     print("=" * 72)
 
-    # 1) 生成（加载健康体 -> 对应算子埋雷）
+    # 1) 生成（加载健康体 -> 对应算子埋雷；vuln_type=None 为诱饵，无雷）
     raw = []
     for i, (contract, rel, vtype, difficulty) in enumerate(COMBOS):
         loaded = generator.run([{"contract_name": contract, "clean_rel_path": rel}])
+        if vtype is None:
+            # 诱饵：planted 就是干净合约，ground truth 为空，无需差分验证
+            rec = loaded[0]
+            sample_id = f"sample-{i + 1:04d}"
+            rec.update(
+                {
+                    "sample_id": sample_id,
+                    "planted_contract_name": contract,
+                    "planted_source": rec["clean_source"],
+                    "issues": [],
+                    "difficulty": difficulty,
+                    "valid": True,
+                    "matches_golden": True,
+                }
+            )
+            raw.append(rec)
+            continue
         injector = registry.build_injector(vtype, seed=SEED, start_index=i)
         records = injector.run(loaded)
         for rec in records:
             rec["difficulty"] = difficulty
         raw.extend(records)
 
-    # 2) 差分验证（逐样本临时覆盖黄金文件 -> forge test -> 恢复）
-    validated = validator.run(raw)
+    # 2) 差分验证（只对有雷样本；诱饵已直接 valid）
+    to_validate = [r for r in raw if r["issues"]]
+    validated = {r["sample_id"]: r for r in validator.run(to_validate)}
+    for idx, rec in enumerate(raw):
+        if rec["sample_id"] in validated:
+            raw[idx] = validated[rec["sample_id"]]
+    validated = raw
 
     # 3) 通过则落盘；失败则丢弃并记录
     index_rows = []
     failures = []
     for rec in validated:
-        issue = rec["issues"][0]
+        issue = rec["issues"][0] if rec["issues"] else None
         if not rec["valid"]:
             failures.append({
                 "sample_id": rec["sample_id"],
-                "vuln_type": issue["vuln_type"],
+                "vuln_type": issue["vuln_type"] if issue else "decoy",
                 "reason": "forge 差分未通过（编译失败 / 破坏功能 / PoC 未差分）",
             })
             continue
@@ -115,7 +140,7 @@ def main() -> None:
                     "sample_id": rec["sample_id"],
                     "clean": f"clean/{clean_name}",
                     "planted": f"planted/{planted_name}",
-                    "ground_truth_types": [issue["vuln_type"]],
+                    "ground_truth_types": [issue["vuln_type"] for issue in rec["issues"]],
                     "issues": rec["issues"],
                 },
                 ensure_ascii=False,
@@ -128,9 +153,9 @@ def main() -> None:
             {
                 "sample_id": rec["sample_id"],
                 "contract": rec["contract_name"],
-                "vuln_type": issue["vuln_type"],
-                "swc": issue["swc"],
-                "severity": issue["severity"],
+                "vuln_type": issue["vuln_type"] if issue else "decoy",
+                "swc": issue["swc"] if issue else "",
+                "severity": issue["severity"] if issue else "none",
                 "difficulty": rec.get("difficulty"),
                 "clean": f"{rec['sample_id']}/clean/{clean_name}",
                 "planted": f"{rec['sample_id']}/planted/{planted_name}",

@@ -12,6 +12,7 @@ from typing import List
 
 from .access_control import AccessControlInjector
 from .reentrancy import ReentrancyInjector
+from .tx_origin import TxOriginInjector
 
 
 @dataclass
@@ -68,6 +69,16 @@ def default_registry() -> OperatorRegistry:
             target_contract="Ownable",
             injector_cls=AccessControlInjector,
             default_difficulty=1,
+        )
+    )
+    registry.register(
+        OperatorSpec(
+            vuln_type="tx_origin",
+            swc="SWC-115",
+            severity="high",
+            target_contract="Wallet",
+            injector_cls=TxOriginInjector,
+            default_difficulty=2,
         )
     )
     return registry

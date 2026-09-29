@@ -1,0 +1,7 @@
+{
+  "sample_id": "sample-0004",
+  "clean": "clean/Station.sol",
+  "planted": "planted/Station.sol",
+  "ground_truth_types": [],
+  "issues": []
+}
