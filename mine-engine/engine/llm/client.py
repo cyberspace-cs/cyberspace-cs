@@ -26,7 +26,7 @@ class LLMClient:
         self.temperature = temperature
         self.timeout = timeout
 
-    def chat(self, messages, max_tokens: int = 1024) -> str:
+    def chat(self, messages, max_tokens: int = 1024, retries: int = 2) -> str:
         body = json.dumps(
             {
                 "model": self.model,
@@ -44,13 +44,19 @@ class LLMClient:
             },
             method="POST",
         )
-        try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-        except urllib.error.HTTPError as e:
-            detail = e.read().decode("utf-8", "replace")
-            raise LLMError(f"HTTP {e.code}: {detail[:500]}") from e
-        except urllib.error.URLError as e:
-            raise LLMError(f"network: {e.reason}") from e
-
-        return data["choices"][0]["message"]["content"] or ""
+        last_err = None
+        for attempt in range(retries + 1):
+            try:
+                with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                return data["choices"][0]["message"]["content"] or ""
+            except urllib.error.HTTPError as e:
+                detail = e.read().decode("utf-8", "replace")
+                raise LLMError(f"HTTP {e.code}: {detail[:500]}") from e
+            except (urllib.error.URLError, TimeoutError, OSError) as e:
+                last_err = e
+                if attempt < retries:
+                    import time
+                    time.sleep(3 * (attempt + 1))
+                    continue
+        raise LLMError(f"network after {retries+1} tries: {last_err}")
