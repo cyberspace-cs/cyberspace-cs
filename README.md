@@ -141,6 +141,7 @@
 | [**k9s**](https://github.com/cyberspace-cs/k9s) | Kubernetes CLI 管理工具 |
 | [**portainer**](https://github.com/cyberspace-cs/portainer) | Docker 可视化管理 |
 | [**supabase**](https://github.com/cyberspace-cs/supabase) | 开源 Firebase 替代 |
+| [**LumaRing**](https://github.com/cyberspace-cs/LumaRing) | 🔘 macOS 轮盘快速切换器：2.9MB 原生 Swift，切应用/窗口/浏览器标签 + App 快捷键（含中文说明） |
 
 ---
 
