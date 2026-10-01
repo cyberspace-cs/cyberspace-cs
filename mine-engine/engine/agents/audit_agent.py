@@ -72,9 +72,16 @@ class AuditAgent:
                 ),
             },
         ]
-        raw = self.client.chat(messages, max_tokens=1024)
-        report = _extract_json(raw)
+        # 用 chat_detailed 而非 chat，才能拿到 token 用量与耗时。
+        # （chat() 只返回文本，用量会被丢掉 —— 成本就无从计算）
+        resp = self.client.chat_detailed(messages, max_tokens=1024)
+        report = _extract_json(resp.text)
         findings = report.get("findings", [])
         if not isinstance(findings, list):
             findings = []
-        return {"findings": findings, "raw": raw}
+        return {
+            "findings": findings,
+            "raw": resp.text,
+            # 下划线开头：明确表示这是元信息，不参与判分
+            "_usage": resp.as_dict(),
+        }

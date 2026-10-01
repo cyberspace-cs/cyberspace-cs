@@ -79,7 +79,9 @@
 | **环境四维体检** | ✅ 本次新增（`run_env_quality.py`） |
 | **时间/成本双轴 + 饱和检测** | ✅ 本次新增（`engine/analytics/openended.py`） |
 | 难度连续旋钮 | ❌ 未做（I11，我们独有的牌） |
-| dummy 解法必须得 0 | ❌ 未做（Harbor 阶段 2） |
+| **时间与成本记账** | ✅ 已落地（`run_benchmark.py` + `engine/llm/pricing.py`）；<br>口径为 **cost per solved task**；单价需自行配置，未配置显示 n/a |
+| **防伪检查（dummy / oracle check）** | ✅ 已落地（`run_dummy_check.py`）；7 样本在 v1/v2 下全通过；<br>并揪出 v2 判分器的诱饵题 bug（已修） |
+| 离线自测 | ✅ 已落地（`run_offline_smoke.py`，13 项断言，无需 API key） |
 
 ### 我们在学术分类里的位置（写论文必用）
 

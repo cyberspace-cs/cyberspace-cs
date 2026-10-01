@@ -26,7 +26,11 @@ __pycache__/
 # 运行产物
 results_level3.json
 results_benchmark.json
+results_offline_smoke*.json
 test/ModelPoC.t.sol
+
+# 单价表（含商业信息，且各人各环境不同；用 prices.example.json 作模板）
+prices.json
 
 # Harbor 导出产物（可由 run_harbor_export.py 重新生成）
 harbor_tasks/

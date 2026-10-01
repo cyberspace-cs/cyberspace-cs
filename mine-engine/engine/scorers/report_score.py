@@ -287,6 +287,27 @@ def score_report_v2(gt_issues, findings, tp_threshold: float = _TP_THRESHOLD) ->
     gt_issues = gt_issues or []
     findings = _dedup_findings(findings)
 
+    # ---- 诱饵题（ground truth 为空）：没有雷，"什么都不报"才是正确答案 ----
+    # 必须单独处理。否则下面 w_gt_total 会因空列表退化成 1.0，
+    # 而 w_hit = 0，recall 被算成 0/1 = 0 —— 于是正确的空报告反而得 0 分，
+    # 诱饵题完全失效（连"乱报"和"不报"都区分不出来，两者都是 0）。
+    # v1 有这个分支，v2 之前漏了。由 run_dummy_check.py 实测发现。
+    if not gt_issues:
+        correct = not findings
+        return {
+            "tp": 0,
+            "fp": len(findings),
+            "fn": 0,
+            "n_gt": 0,
+            "n_pred": len(findings),
+            "recall": 1.0,
+            "precision": 1.0 if correct else 0.0,
+            "f1": 1.0 if correct else 0.0,
+            "mean_quality": 0.0,
+            "details": [],
+            "is_decoy": True,
+        }
+
     n_gt, n_pred = len(gt_issues), len(findings)
     pairs = []
     for gi, g in enumerate(gt_issues):
