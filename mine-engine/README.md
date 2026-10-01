@@ -208,6 +208,26 @@ py run_env_quality.py --json                # 机读输出
 | 忠实度 | n/a | **最大盲区**——缺真实任务锚定集 |
 | 综合 | **weak (2 dims unmeasured)** | 我们只稳住了四条里最容易的一条 |
 
+### 时间轴 / 成本轴 / 饱和检测（对标 ALE-Bench）
+
+```python
+from engine.analytics import saturation_check, cost_quality_frontier
+
+# 给更多时间还能涨多少分？三点法拟合渐近线
+saturation_check([(3600, 58.8), (14400, 77.7), (259200, 87.6), (604800, 92.1)])
+# -> asymptote=92.70  headroom=0.60  verdict='saturated'
+#    （ALE-Bench 论文实测曲线，被正确判为已贴天花板）
+
+# 谁在成本—质量帕累托前沿上？
+cost_quality_frontier([
+    {"name": "OpenHands",   "cost": 3.25,   "score": 905},
+    {"name": "ALE-Agent",   "cost": 100.33, "score": 1879},
+])
+```
+
+ALE-Bench（Sakana × AtCoder, arXiv:2506.09050）的三条纪律：**连续分代替二值分**、
+**必须报时间预算**、**必须报成本**。前一条我们已部分做到，后两条**完全没有**。
+
 ### 三条赛道（四组件领域无关，换 adapter 即可）
 
 | 赛道 | 验证器硬度 | 状态 |
@@ -233,10 +253,11 @@ print([d.name_cn for d in list_domains()]); print(scaffold_checklist('corp-audit
 | [02-evolution](./docs/02-evolution.md) | 研究演进脉络（新手向，从"人出题"到"机器出题"） |
 | [03-landscape](./docs/03-landscape.md) | 同行 benchmark 全景与定位矩阵 |
 | [04-three-tracks](./docs/04-three-tracks.md) | 国家审计 / 企业审计 / 审计师三条赛道的数据设计 |
-| [05-ideas](./docs/05-ideas.md) | 10 个科研 idea（含创新性/工作量/风险评分） |
+| [05-ideas](./docs/05-ideas.md) | 12 个科研 idea（含创新性/工作量/风险评分） |
 | [06-roadmap](./docs/06-roadmap.md) | M7–M10 工程路线图 |
 | [07-synthetic-environment](./docs/07-synthetic-environment.md) | 合成环境数据：对标 AWM 与中科院综述，我们缺的三件工程件 |
 | [08-evaluation-craft](./docs/08-evaluation-craft.md) | 评测这门手艺：八个陷阱 + 报告必备清单 |
+| **[09-synthetic-env-playbook](./docs/09-synthetic-env-playbook.md)** | **三坐标手册：ALE / ALE-Bench / Harbor 分别解决什么问题，我们差在哪** |
 
 可视化报告：[`docs/report.html`](./docs/report.html)
 

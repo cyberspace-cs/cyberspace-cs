@@ -501,7 +501,7 @@ ReportScorer       把审计报告对 ground truth 判 recall / precision / F1</
 <!-- 5.5 -->
 <section id="s55">
   <h2><span class="num">5.5</span>合成环境不只是"出题"，还要"体检"</h2>
-  <p class="sub">对标 AWM（arXiv:2606.05405，1,000 个全合成环境）与中科院自动化所综述（arXiv:2606.12191）</p>
+  <p class="sub">对标 AWM（arXiv:2602.10090，1,000 个全合成环境）与中科院自动化所综述（arXiv:2606.12191）</p>
 
   <div class="callout warn">
     <b>本轮最重要的发现：我们做出了四条验收线里最容易的一条。</b>
@@ -574,6 +574,107 @@ ReportScorer       把审计报告对 ground truth 判 recall / precision / F1</
     我们的题<b>在考试开始那一刻才生成</b>——不存在池子，也就无从腐烂。
     综述里与我们思路同构的 <b>gg-bench</b>（随机采样发明全新游戏规则以避免训练污染）
     可作旁证。
+  </div>
+</section>
+
+<!-- 5.6 -->
+<section id="s56">
+  <h2><span class="num">5.6</span>三坐标校准：ALE / ALE-Bench / Harbor 是三件不同的事</h2>
+  <p class="sub">最容易搞混的三个名字。它们不是竞品，是三层不同性质的东西</p>
+
+  <table>
+    <tr><th>坐标</th><th>性质</th><th>出处 / 论文</th><th>回答的问题</th></tr>
+    <tr>
+      <td><b>ALE</b><br><span class="muted">Agents' Last Exam</span></td>
+      <td>评测<b>基准</b>（一套题）</td>
+      <td>Berkeley RDI / Dawn Song<br><span class="muted">arXiv:2606.05405</span></td>
+      <td><b>怎么判分、怎么防污染</b></td>
+    </tr>
+    <tr>
+      <td><b>ALE-Bench</b><br><span class="muted">ALgorithm Engineering Benchmark</span></td>
+      <td>评测<b>基准</b>（一套题）</td>
+      <td>Sakana AI × AtCoder<br><span class="muted">arXiv:2506.09050 · NeurIPS'25</span></td>
+      <td><b>怎么让分数永不封顶</b></td>
+    </tr>
+    <tr>
+      <td><b>Harbor</b></td>
+      <td>评测<b>框架</b>（跑题的插座）</td>
+      <td>laude-institute<br><span class="muted">Terminal-Bench 2.0 底座</span></td>
+      <td><b>怎么打包成可复现的任务</b></td>
+    </tr>
+    <tr>
+      <td><b>AWM</b><br><span class="muted">Agent World Model</span></td>
+      <td>环境<b>合成</b>流水线</td>
+      <td>UNC + Snowflake<br><span class="muted">arXiv:2602.10090 · ICML'26</span></td>
+      <td><b>怎么批量造出能用的环境</b></td>
+    </tr>
+  </table>
+
+  <p style="margin-top:16px">串起来是一条流水线：</p>
+  <div class="card" style="margin-top:8px">
+    <b>AWM 造环境 → Harbor 打包成三元组 → ALE 定判分纪律 → ALE-Bench 定分数形态</b>
+    <div class="muted" style="margin-top:6px">
+      （怎么生题）　→　（怎么交付）　→　（怎么判才不作弊）　→　（怎么判才不封顶）
+    </div>
+  </div>
+
+  <h3 style="margin-top:22px">ALE-Bench 这一节是本次最大的增量：它解决了 ALE 没解决的问题</h3>
+  <p>ALE 解决的是"别作弊"。但还有个更根本的问题 ALE 没管——<b>分数会饱和</b>。
+  ALE-Bench 的答案是三条，而<b>这三条我们一条都没做</b>：</p>
+
+  <div class="grid g3" style="margin-top:12px">
+    <div class="card">
+      <div class="tag t-bad">我们缺</div>
+      <h4 style="margin:8px 0 6px">① 连续分 + 开放式上限</h4>
+      <p class="muted">它的题是 NP-hard，真最优解算不出来，所以<b>分数永远有上升空间</b>——
+      AI 超过人类之后 benchmark 依然有效。</p>
+      <div class="muted" style="margin-top:8px">
+        我们的 exploit 模式仍是 <b>pass/fail 二值</b>，题一生成天花板就定了。
+      </div>
+    </div>
+    <div class="card">
+      <div class="tag t-bad">我们缺</div>
+      <h4 style="margin:8px 0 6px">② 时间预算必须报</h4>
+      <p class="muted">同一批题，只改时间预算：</p>
+      <table style="margin-top:6px;font-size:13px">
+        <tr><td>1 小时</td><td><b>58.8</b></td></tr>
+        <tr><td>几小时</td><td><b>77.7</b></td></tr>
+        <tr><td>几天</td><td><b>87.6</b></td></tr>
+        <tr><td>1 周</td><td><b>92.1</b></td></tr>
+      </table>
+      <div class="muted" style="margin-top:6px">这就是"长时程推理"的可测量定义。
+      我们 <code>run_benchmark</code> <b>没记 wall-clock</b>。</div>
+    </div>
+    <div class="card">
+      <div class="tag t-bad">我们缺</div>
+      <h4 style="margin:8px 0 6px">③ 成本必须报</h4>
+      <p class="muted">只报分数是失真：</p>
+      <table style="margin-top:6px;font-size:13px">
+        <tr><td>OpenHands</td><td>905 分</td><td><b>$3.25</b>/题</td></tr>
+        <tr><td>Self-Refine</td><td>1198 分</td><td><b>$11.10</b>/题</td></tr>
+        <tr><td>ALE-Agent</td><td><b>1879 分</b></td><td><b>$100.33</b>/题</td></tr>
+      </table>
+      <div class="muted" style="margin-top:6px">贵 30 倍换 2 倍分，值不值取决于预算。
+      我们的报告<b>两轴都没有</b>。</div>
+    </div>
+  </div>
+
+  <div class="callout ok" style="margin-top:16px">
+    <b>但我们有两张它没有的牌。</b>
+    ALE-Bench 的开放式上限是<b>题目自带</b>的（NP-hard）、不可调；
+    ALE 的三层难度是<b>离散</b>的、题目固定。
+    而我们是<b>题能换</b>（埋雷引擎 + 固定 seed，可再生）<b>且难度能连续调</b>
+    （雷数 / 跨函数距离 / 诱饵密度 / 混淆度 / 变体强度）。
+    <br><br>
+    在 [09 · 三坐标手册](./09-synthetic-env-playbook.md) 的总表里，
+    这是唯二标 ⭐「我们更强」的两行——<b>对外叙事必须站在这两行上</b>。
+  </div>
+
+  <div class="callout warn" style="margin-top:12px">
+    <b>已落地</b>：<code>engine/analytics/openended.py</code> —— 时间轴（边际收益 / 每翻倍涨多少）、
+    饱和检测（三点法拟合渐近线，ALE-Bench 自己的曲线被正确判为 <code>saturated</code>）、
+    成本帕累托前沿、Performance Elo 归一化。<br>
+    <b>还差</b>：把它们接进 <code>run_benchmark</code>（约 1 小时，见 I12）。
   </div>
 </section>
 
@@ -660,6 +761,23 @@ ReportScorer       把审计报告对 ground truth 判 recall / precision / F1</
       回答一个所有人都想知道但没人答的问题：<b>造一道好题要花多少钱？</b></td>
       <td>3</td><td><b>2</b></td><td><b>2</b></td>
     </tr>
+    <tr style="background:#dcfce7">
+      <td><b>I12</b></td>
+      <td>时间—成本双轴<br><span class="tag t-ok">1 小时</span></td>
+      <td>ALE-Bench 是少数<b>同时报时间和成本</b>的 benchmark，我们两样都没有——
+      <b>分数因此不可比</b>。记录 wall-clock + token 成本，画时间—分数曲线，
+      分数用 Elo 锚到人类分布报 "Top X%"。模块已写好，接线即可。</td>
+      <td>2</td><td><b>1</b></td><td><b>1</b></td>
+    </tr>
+    <tr style="background:#dcfce7">
+      <td><b>I11</b></td>
+      <td>难度连续旋钮<br><span class="tag t-pur">我们独有的牌</span></td>
+      <td>ALE-Bench 靠 NP-hard 让分数永不饱和，但它的难度<b>不可调</b>；
+      ALE 的三层难度是<b>离散</b>的。我们把埋雷算子参数化
+      （雷数 / 跨函数距离 / 诱饵密度 / 混淆度 / 变体强度），
+      <b>题能换 + 难度能连续调</b>两者兼得。测"难度刻度 → 模型分数"曲线。</td>
+      <td>5</td><td><b>3</b></td><td><b>2</b></td>
+    </tr>
   </table>
 
   <div class="callout" style="margin-top:18px">
@@ -694,6 +812,13 @@ ReportScorer       把审计报告对 ground truth 判 recall / precision / F1</
       零第三方依赖，没 embedding 时自动降级为结构指纹。<b>首次量化出"我们只稳住了最容易的一维"</b></td></tr>
     <tr style="background:#f3e8ff"><td>9</td><td><code>docs/07</code> · <code>docs/08</code></td>
       <td>合成环境数据（对标 AWM 与中科院综述）+ 评测这门手艺（八个陷阱与报告清单）</td></tr>
+    <tr style="background:#dcfce7"><td>10</td><td><code>engine/analytics/openended.py</code></td>
+      <td><b>时间轴 / 成本轴 / 饱和检测 / Performance 归一化</b>——对标 ALE-Bench。
+      时间预算每翻倍涨多少分；三点法拟合渐近线测"还剩多少上升空间"；
+      成本帕累托前沿；分数锚人类分布换算 Elo-like Performance</td></tr>
+    <tr style="background:#dcfce7"><td>11</td><td><code>docs/09</code> 三坐标手册</td>
+      <td>用 <b>ALE / ALE-Bench / Harbor</b> 三个坐标重新梳理全盘。
+      澄清三个名字是三件不同的事，并指出分数形态是我们<b>最大的空白</b></td></tr>
   </table>
 
   <h3>判分器回归测试（全部通过）</h3>

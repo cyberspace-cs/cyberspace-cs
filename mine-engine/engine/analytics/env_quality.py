@@ -8,7 +8,7 @@
     complexity   复杂性  —— 难度分布合理吗？（天花板 / 地板效应）
     fidelity     忠实度  —— 合成题像真实题吗？
 
-以及 AWM (arXiv:2606.05405) 的两条工程指标：
+以及 AWM (Agent World Model, UNC + Snowflake, arXiv:2602.10090, ICML'26) 的两条工程指标：
     blocked rate  —— 连黄金解答都跑不通的废题占比
     category cap  —— 单类别占比上限，防止池子崩塌（mode collapse）
 

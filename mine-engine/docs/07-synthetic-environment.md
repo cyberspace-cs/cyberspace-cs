@@ -4,7 +4,7 @@
 > 笔记正文在图集里读不到，所以这里不猜原文，而是把这个主题**最硬的公开资料**拆开，
 > 逐条映射到 AuLE / mine-engine 上。参考资料：
 >
-> - **AWM（Agent World Model）** arXiv:2606.05405 系列 / Snowflake 工程博客 —— 1,000 个全合成可执行环境、10,000 个任务
+> - **AWM（Agent World Model）** arXiv:2602.10090 / UNC-Chapel Hill + Snowflake，ICML'26 —— 1,000 个全合成可执行环境、10,000 个任务
 > - **中科院自动化所综述** arXiv:2606.12191《Agentic Environment Engineering》—— 环境建模 / 合成 / 评价 / 应用全景
 >
 > 一句话结论：**我们做的事，学术上叫「从零符号合成」（from-scratch symbolic synthesis），

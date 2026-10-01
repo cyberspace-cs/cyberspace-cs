@@ -19,11 +19,17 @@
 | 02 | [研究演进脉络（新手向）](./02-evolution.md) | 完全新手 | 这个领域怎么从"人出题"走到"机器出题"，我们站在哪一格 |
 | 03 | [生态调研：同行 benchmark 全景](./03-landscape.md) | 做定位的人 | **ALE** / Harbor / EVMbench / FinancialAuditBench / AuditFraudBench / FinAuditing |
 | 04 | [三条赛道的数据设计](./04-three-tracks.md) | 要扩赛道的人 | 国家审计 / 企业审计 / 审计师，各自的"雷"和"验证器"怎么设计 |
-| 05 | [科研 idea 清单](./05-ideas.md) | 要发论文的人 | 10 个 idea，含创新性/工作量/风险评分与优先级 |
+| 05 | [科研 idea 清单](./05-ideas.md) | 要发论文的人 | 12 个 idea，含创新性/工作量/风险评分与优先级 |
 | 06 | [工程改进与路线图](./06-roadmap.md) | 写代码的人 | M7–M10 排期 |
 | **07** | [**合成环境数据：别人的经验与我们的差距**](./07-synthetic-environment.md) | 做引擎的人 | 对标 AWM(1,000 合成环境) + 中科院环境工程综述，列出我们缺的三件工程件 |
 | **08** | [**评测这门手艺：陷阱、指标、补了什么**](./08-evaluation-craft.md) | 做评测的人 | 八个常见陷阱 + 评测报告必备清单 + 环境四维体检 |
+| **09** | [**合成数据与环境工程：三坐标校准手册**](./09-synthetic-env-playbook.md) ⭐ | **先读这篇** | 用 **ALE / ALE-Bench / Harbor** 三个坐标重新梳理全盘：怎么造环境、怎么封装、怎么判分、怎么让分数不封顶 |
 | — | [可视化报告 report.html](./report.html) | 所有人 | 一页看懂：痛点 / 脉络 / 定位 / 赛道 / idea / 路线图 |
+
+> ⚠️ **三个名字别搞混**（详见 [09](./09-synthetic-env-playbook.md) 第 0 节）：
+> **ALE** = Agents' Last Exam（Berkeley RDI，arXiv:2606.05405）——判分纪律与防污染；
+> **ALE-Bench** = ALgorithm Engineering Benchmark（Sakana × AtCoder，arXiv:2506.09050）——连续分与开放式上限；
+> **Harbor** = 评测框架（laude-institute）——任务三元组与验证流程。三者不是同类。
 
 ### 已有沉淀（偏"内部设计决策"）
 
@@ -66,6 +72,9 @@
 | Harbor 导出 | ✅ 本次新增（`run_harbor_export.py`） |
 | 跨赛道 | 🔨 三条赛道契约已定义，实现待做 |
 | **环境四维体检** | ✅ 本次新增（`run_env_quality.py`） |
+| **时间/成本双轴 + 饱和检测** | ✅ 本次新增（`engine/analytics/openended.py`） |
+| 难度连续旋钮 | ❌ 未做（I11，我们独有的牌） |
+| dummy 解法必须得 0 | ❌ 未做（Harbor 阶段 2） |
 
 ### 我们在学术分类里的位置（写论文必用）
 
