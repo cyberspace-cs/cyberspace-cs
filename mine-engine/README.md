@@ -117,11 +117,93 @@ py run_benchmark.py
 
 **发现**：① deepseek-v4-pro（官方真实模型名，V4-Pro-0813）满分；② 上次 deepseek-v4-flash 翻车这次满分，说明单次跑有随机性，baseline 需多次取平均；③ LLM 变体题让 qwen3.8-max 误报 2 处（precision 0.75）——改写后的代码让大模型过度敏感。区分度刚起步，题还要继续加难。
 
-## 下一步（M7+）
+## M7 · 抗污染、可复现、接入行业标准
+
+定位升级：**mine-engine 不是审计 Agent，是"会自己出题的考试院"**——
+一台持续产出**新鲜、可验证、抗污染**审计考题的引擎。智能合约是它落地的第一个赛道。
+
+为什么必须是"引擎"而不是"数据集"：公开 benchmark 一发布就开始腐烂（题目泄漏进训练语料）。
+EVMbench 用训练截止后的真实事故做无污染重测，Agent 表现断崖下跌——这就是证据。
+我们的题是**考试开始那一刻才生成**的，背不到。
+
+### Harbor 导出（对齐行业标准）
+
+[Harbor](https://github.com/harbor-framework/harbor) 是 Terminal-Bench 团队出品的评测执行器，
+正在成为跑分的事实标准。一键把数据集导出成它的任务三元组：
+
+```shell
+py run_harbor_export.py                    # 默认 detect 模式 -> harbor_tasks/
+py run_harbor_export.py --mode exploit     # 判攻击 PoC 能否真打穿
+
+uv tool install harbor
+harbor run --dataset-path harbor_tasks --agent claude-code --model anthropic/claude-opus-4-1
+```
+
+每个任务目录严格遵循 `instruction.md + environment/ + tests/ + solution/`：
+**ground truth 只存在于 `tests/` 下**，agent 在 workspace 里翻不到答案。
+
+### 判分 v2（类型 + 定位 IoU + 严重度加权）
+
+```shell
+py run_benchmark.py --scorer v2 --repeat 5 --out results.json
+```
+
+| 场景 | v1（旧） | v2（新） |
+|---|---|---|
+| 说 "non-reentrant"（意为安全）却填 reentrancy | ❌ 误判为 TP | ✅ 判为 FP（否定词检测） |
+| 定位到错误的函数 | 只按类型判，仍算 TP | 定位分扣减，F1 下降到 0.82 |
+| 把 critical 报成 low | 不扣分 | recall 扣到 0.8 |
+| 同一雷重复报两次 | 重复计数 | 自动去重 |
+| 定位粒度 | — | 遵循"判分严格度不超过标注粒度"：gt 是函数级区间时，报区间内任意行即算命中 |
+
+### 难度 / 区分度 / 抗污染（engine/analytics）
+
+| 指标 | 含义 |
+|---|---|
+| `item_difficulty` | 实测难度（替代此前手填的 1/2） |
+| `item_discrimination` | 区分度 D = 高能力组通过率 − 低能力组通过率，>0.3 为好题 |
+| `fit_rasch` | 简化 IRT（1PL）拟合，把题目难度与模型能力放到同一把尺子上 |
+| `contamination_resistance` | **CRS 抗污染分**：同算子换 seed 重生成新题后分数是否稳定 |
+
+CRS 只有"引擎型"benchmark 能算，静态数据集算不了——这是我们的结构性优势。
+
+### 三条赛道（四组件领域无关，换 adapter 即可）
+
+| 赛道 | 验证器硬度 | 状态 |
+|---|---|---|
+| 智能合约审计 | L1 · 编译器 + 测试 | ✅ 已落地 |
+| 企业审计（舞弊/内控） | L2 · 三表勾稽 + 凭证链 | 设计完成（8 个算子） |
+| 国家审计（财政资金） | L3 · 勾稽 + 法条命中 | 设计完成（8 个算子） |
+| 审计师（CPA 底稿） | L4 · 持牌人 rubric | 设计完成（7 个算子） |
+
+```shell
+py -c "from engine.adapters import list_domains, scaffold_checklist; \
+print([d.name_cn for d in list_domains()]); print(scaffold_checklist('corp-audit'))"
+```
+
+## 研究文档
+
+完整分析见 [`docs/`](./docs)：
+
+| 文档 | 内容 |
+| --- | --- |
+| [00-INDEX](./docs/00-INDEX.md) | 索引与三分钟速读 |
+| [01-code-review](./docs/01-code-review.md) | 代码与资产现状审查（含 P0/P1 问题清单） |
+| [02-evolution](./docs/02-evolution.md) | 研究演进脉络（新手向，从"人出题"到"机器出题"） |
+| [03-landscape](./docs/03-landscape.md) | 同行 benchmark 全景与定位矩阵 |
+| [04-three-tracks](./docs/04-three-tracks.md) | 国家审计 / 企业审计 / 审计师三条赛道的数据设计 |
+| [05-ideas](./docs/05-ideas.md) | 7 个科研 idea（含创新性/工作量/风险评分） |
+| [06-roadmap](./docs/06-roadmap.md) | M7–M10 工程路线图 |
+
+可视化报告：[`docs/report.html`](./docs/report.html)
+
+## 下一步（M8+）
 
 - **继续加难**：unchecked call（SWC-104）、组合雷（同合约多雷）、更隐蔽的诱饵；
   让 qwen 系也开始丢分；
+- **Review 模式**：给模型一份"已完成的审计报告"，里面埋了错误结论，让它复核
+  （借鉴 FinancialAuditBench 的 review 设定，成本更低、区分度更高）；
 - 多轮工具调用 Agent（读文件 / grep / forge test）替代单轮；
-- 远程沙箱（ubuntu@43.143.231.106，已测 SSH 通）部署 Foundry + harness，做批量/受控评测；
-- 位置/证据级匹配，替代当前的类型集合匹配；
-- 埋雷–审计共演化；金融账套 adapter（共享同一套四组件接口）。
+- 远程沙箱部署 Foundry + harness，做批量/受控评测；
+- **第二个 adapter**：优先企业审计（验证器最硬、数据最公开），证明四组件抽象真的跨赛道；
+- 埋雷–审计共演化。
