@@ -498,6 +498,85 @@ ReportScorer       把审计报告对 ground truth 判 recall / precision / F1</
   </div>
 </section>
 
+<!-- 5.5 -->
+<section id="s55">
+  <h2><span class="num">5.5</span>合成环境不只是"出题"，还要"体检"</h2>
+  <p class="sub">对标 AWM（arXiv:2606.05405，1,000 个全合成环境）与中科院自动化所综述（arXiv:2606.12191）</p>
+
+  <div class="callout warn">
+    <b>本轮最重要的发现：我们做出了四条验收线里最容易的一条。</b>
+    中科院综述把合成环境的评价分成四维，并坦承
+    <b>"正确性的评估方法已相当成熟，多样性 / 复杂性 / 忠实度的定量评估仍处于早期"</b>——
+    而我们稳住的恰好是<b>正确性</b>这一维，难的三维基本没碰。
+  </div>
+
+  <div class="grid g3">
+    <div class="card">
+      <div class="kpi" style="color:#16a34a">✅ 正确性</div>
+      <div class="muted">题可解吗？判分对吗？</div>
+      <p style="margin-top:8px">FoundryDiff 编译 + 测试差分，是我们最强的资产。
+      缺 <b>blocked rate</b>（连黄金解答都跑不通的废题率）——AWM 把它当成信号可靠性的头号指标。</p>
+    </div>
+    <div class="card">
+      <div class="kpi" style="color:#dc2626">0.37 多样性</div>
+      <div class="muted">池子是不是全是同一类题？</div>
+      <p style="margin-top:8px">类别均衡度 0.975 很高（雷型分散），
+      但<b>结构离散度只有 0.173</b>——<b>雷型分散，代码结构却高度同质</b>。
+      这是典型的 mode collapse 前兆，AWM 靠 embedding 去重 + 类别上限防它。</p>
+    </div>
+    <div class="card">
+      <div class="kpi" style="color:#dc2626">0.37 复杂性</div>
+      <div class="muted">难度梯度铺开了吗？</div>
+      <p style="margin-top:8px">5 档难度只占了 2 档。全简单→天花板效应，
+      全难→地板效应，两种情况下<b>这道题对排序的贡献都是 0</b>。</p>
+    </div>
+  </div>
+
+  <div class="callout bad" style="margin-top:14px">
+    <b>忠实度：完全没被度量，而它是唯一能摧毁整个方法论的维度。</b><br>
+    综述原话：一个软件工程环境里的任务，即使技术上可以运行，
+    <b>如果它的 bug 模式与现实项目中的 bug 完全不同，这个环境就缺乏忠实度</b>。<br>
+    换成我们：合成合约能编译、能触发重入、能拿 POC——
+    但如果它跟真实链上合约长得不像，<b>我们测出来的分数能不能外推到真实审计？</b>
+    <span class="tag t-pur">I9 · 差异化最强</span>
+  </div>
+
+  <h3 style="margin-top:22px;font-size:16px">AWM 的三件工程件，我们缺两件</h3>
+  <table style="margin-top:8px">
+    <tr>
+      <th style="width:150px">工程件</th><th>AWM 的做法与效果</th><th style="width:170px">我们</th>
+    </tr>
+    <tr>
+      <td><b>自我修正循环</b><br><span class="tag t-ok">半天能做完</span></td>
+      <td>组件生成后立即执行，遇 runtime error 就喂回 LLM 重生成。
+      <b>平均 1.13 次迭代即可修复</b>，各阶段成功率 > 85%。
+      这才是它能扩到 1,000 个环境的关键——不是什么高深算法。</td>
+      <td>❌ 失败即丢弃<br><span class="muted">白白浪费一次 LLM 调用</span></td>
+    </tr>
+    <tr>
+      <td><b>多样性度量</b></td>
+      <td>场景 / schema / 工具集都用 embedding 算语义多样性，并设<b>类别上限</b>防止池子崩塌。</td>
+      <td>✅ 本轮已补<br><span class="muted">run_env_quality.py</span></td>
+    </tr>
+    <tr>
+      <td><b>混合判分</b></td>
+      <td>对照实验结论极干净：LLM-only 会幻觉，code-only 遇到环境缺陷很脆，
+      <b>code-augmented（代码证据 + 模型判语义）最佳</b>。
+      <span class="muted">这条纠正了我们此前"完全否定 LLM-as-judge"的立场——
+      问题不在能不能用模型判，而在判的时候有没有代码证据当锚。</span></td>
+      <td>⚠️ 纯代码判<br><span class="muted">待加 hybrid 开关</span></td>
+    </tr>
+  </table>
+
+  <div class="callout ok" style="margin-top:14px">
+    <b>但有一件事我们比 AWM 强，而且是结构性的：</b>
+    AWM 造完 1,000 个环境就固定成池子了（它自己也承认"固定流程无法自我演化"）；
+    我们的题<b>在考试开始那一刻才生成</b>——不存在池子，也就无从腐烂。
+    综述里与我们思路同构的 <b>gg-bench</b>（随机采样发明全新游戏规则以避免训练污染）
+    可作旁证。
+  </div>
+</section>
+
 <!-- 6 -->
 <section id="s6">
   <h2><span class="num">6</span>科研 idea 看板</h2>
@@ -557,13 +636,40 @@ ReportScorer       把审计报告对 ground truth 判 recall / precision / F1</
       有现成投稿通道：中国审计学会"人工智能时代的审计"专题。</td>
       <td>5</td><td><b>5</b></td><td><b>4</b></td>
     </tr>
+    <tr style="background:#dcfce7">
+      <td><b>I8</b></td>
+      <td><b>自我修正循环</b><br><span class="tag t-ok">⚡ 半天</span></td>
+      <td>验证失败时把 <code>forge</code> 的 stderr + 源码喂回 LLM 让它修自己的埋雷代码。
+      AWM 平均 <b>1.13 次迭代</b>即可修复。<b>不做这个，扩题池会被算子成功率卡死。</b></td>
+      <td>2</td><td><b>1</b></td><td><b>1</b></td>
+    </tr>
+    <tr style="background:#f3e8ff">
+      <td><b>I9</b></td>
+      <td><b>忠实度度量</b><br><span class="tag t-pur">💎 差异化最强</span></td>
+      <td>所有 benchmark 论文都默认"我的题能代表真实任务"，
+      <b>没人把这个假设本身当研究对象</b>。用真实漏洞做只读锚点，
+      算「合成题 ↔ 真实题」分布距离，并做跨域迁移检验。
+      <b>这是 I1 论文的记忆点。</b></td>
+      <td>5</td><td>3</td><td>3</td>
+    </tr>
+    <tr>
+      <td><b>I10</b></td>
+      <td>成本—质量前沿<br><span class="tag t-info">可并入 I1</span></td>
+      <td>AWM 明确承认<b>没研究</b>"环境生成成本 vs 最终性能"。
+      把「每题生成成本 vs 该题区分度」画成散点找拐点，
+      回答一个所有人都想知道但没人答的问题：<b>造一道好题要花多少钱？</b></td>
+      <td>3</td><td><b>2</b></td><td><b>2</b></td>
+    </tr>
   </table>
 
   <div class="callout" style="margin-top:18px">
-    <b>组合打法。</b>短期（1–2 月）：I1+I4+I6 打包成方法论文
+    <b>组合打法。</b><b>第一步（本周）：I8 自我修正循环</b>，半天做完，直接把算子成功率拉起来；
+    短期（1–2 月）：I1+I4+I6+<b>I9</b> 打包成方法论文
     <i>"Benchmarks Rot: Regenerative Evaluation for Audit Agents"</i>；
     中期（3–5 月）：I2 撑框架，做出 L2 企业审计 adapter；
     I5 单开投 CSCW/CHI；I7 走政策通道。<br>
+    <b>对外叙事顺序：</b>先讲 I7 国家审计（独家、有甲方）→ 再用 I1 可再生（方法论硬核）建立学术 credibility
+    → 最后用 I2 硬度阶梯收尾，证明这不是一个点子而是一个方向。
     <b>对外叙事顺序：</b>先讲 I7 国家审计（独家、有甲方）→ 再用 I1 可再生（方法论硬核）建立学术 credibility
     → 最后用 I2 硬度阶梯收尾，证明这不是一个点子而是一个方向。
   </div>
@@ -583,6 +689,11 @@ ReportScorer       把审计报告对 ground truth 判 recall / precision / F1</
     <tr><td>5</td><td>Harbor 导出器</td><td>把任意赛道样本导出成 <code>instruction.md + environment/ + tests/</code> 三元组</td></tr>
     <tr><td>6</td><td><code>run_benchmark --repeat N</code></td><td><span class="tag t-warn">P1</span> 单次采样无统计力，现支持多轮输出 mean±std</td></tr>
     <tr><td>7</td><td><code>engine/adapters/domains.py</code></td><td>三条赛道的 adapter 契约与算子清单（共 23 个算子设计）</td></tr>
+    <tr style="background:#f3e8ff"><td>8</td><td><code>engine/analytics/env_quality.py</code><br><code>run_env_quality.py</code></td>
+      <td><b>环境四维体检</b>：正确性 / 多样性 / 复杂性 / 忠实度 + blocked rate + 类别上限 + embedding 去重。
+      零第三方依赖，没 embedding 时自动降级为结构指纹。<b>首次量化出"我们只稳住了最容易的一维"</b></td></tr>
+    <tr style="background:#f3e8ff"><td>9</td><td><code>docs/07</code> · <code>docs/08</code></td>
+      <td>合成环境数据（对标 AWM 与中科院综述）+ 评测这门手艺（八个陷阱与报告清单）</td></tr>
   </table>
 
   <h3>判分器回归测试（全部通过）</h3>

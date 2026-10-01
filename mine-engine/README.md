@@ -186,6 +186,28 @@ py run_benchmark.py --scorer v2 --repeat 5 --out results.json
 
 CRS 只有"引擎型"benchmark 能算，静态数据集算不了——这是我们的结构性优势。
 
+### 环境四维体检（不只是评模型，还要评考场）
+
+依据中科院自动化所综述 arXiv:2606.12191，合成环境要按**正确性 / 多样性 / 复杂性 / 忠实度**
+四维验收；AWM（arXiv:2606.05405）再加两条工程指标：**blocked rate**（废题率）与**类别上限**。
+
+```shell
+py run_env_quality.py                       # 体检 datasets/
+py run_env_quality.py --gold results.json   # 补正确性维（黄金解答自测）
+py run_env_quality.py --reference real/     # 补忠实度维（真实任务锚定集）
+py run_env_quality.py --json                # 机读输出
+```
+
+当前实测（7 样本）：
+
+| 维度 | 得分 | 诊断 |
+| --- | --- | --- |
+| 正确性 | n/a | 待补 blocked rate |
+| 多样性 | 0.3665 | 雷型分散（类别均衡 0.975）但**代码结构高度同质**（结构离散 0.173） |
+| 复杂性 | 0.3673 | 5 档难度只占 2 档，梯度没铺开 |
+| 忠实度 | n/a | **最大盲区**——缺真实任务锚定集 |
+| 综合 | **weak (2 dims unmeasured)** | 我们只稳住了四条里最容易的一条 |
+
 ### 三条赛道（四组件领域无关，换 adapter 即可）
 
 | 赛道 | 验证器硬度 | 状态 |
@@ -211,14 +233,22 @@ print([d.name_cn for d in list_domains()]); print(scaffold_checklist('corp-audit
 | [02-evolution](./docs/02-evolution.md) | 研究演进脉络（新手向，从"人出题"到"机器出题"） |
 | [03-landscape](./docs/03-landscape.md) | 同行 benchmark 全景与定位矩阵 |
 | [04-three-tracks](./docs/04-three-tracks.md) | 国家审计 / 企业审计 / 审计师三条赛道的数据设计 |
-| [05-ideas](./docs/05-ideas.md) | 7 个科研 idea（含创新性/工作量/风险评分） |
+| [05-ideas](./docs/05-ideas.md) | 10 个科研 idea（含创新性/工作量/风险评分） |
 | [06-roadmap](./docs/06-roadmap.md) | M7–M10 工程路线图 |
+| [07-synthetic-environment](./docs/07-synthetic-environment.md) | 合成环境数据：对标 AWM 与中科院综述，我们缺的三件工程件 |
+| [08-evaluation-craft](./docs/08-evaluation-craft.md) | 评测这门手艺：八个陷阱 + 报告必备清单 |
 
 可视化报告：[`docs/report.html`](./docs/report.html)
 
 ## 下一步（M8+）
 
-- **继续加难**：unchecked call（SWC-104）、组合雷（同合约多雷）、更隐蔽的诱饵；
+- **自我修正循环**（半天，性价比最高）：验证失败时把 `forge` 的 stderr + 源码喂回 LLM
+  让它修自己的埋雷代码。AWM 平均 **1.13 次迭代**即可修复，各阶段成功率 > 85%。
+  不做这个，扩题池会被算子成功率卡死；
+- **补多样性**：当前结构离散度仅 0.173（雷型分散但代码同质），
+  加组合雷 / 更隐蔽诱饵 / 变体改写，并用 `run_env_quality.py` 持续监控；
+- **建立真实任务锚定集**：忠实度完全没被度量，而它是唯一能摧毁整个方法论的维度；
+- **继续加难**：unchecked call（SWC-104）、组合雷（同合约多雷）；
   让 qwen 系也开始丢分；
 - **Review 模式**：给模型一份"已完成的审计报告"，里面埋了错误结论，让它复核
   （借鉴 FinancialAuditBench 的 review 设定，成本更低、区分度更高）；
