@@ -42,7 +42,7 @@
 | --- | --- |
 | [AuLE-设计文档.md](./AuLE-设计文档.md) | v0.3：三级考试体系、四维评分、已有实验结果（含 Level 2 打穿率） |
 | [ALE-Harbor借鉴方案.md](./ALE-Harbor借鉴方案.md) | v0.4：ALE 三层难度/五阶段生产/Gate-and-score + Harbor 七阶段验证的逐条借鉴 |
-| [AuLE-代码实现方案.md](./AuLE-代码实现方案.md) | v0.1：借鉴 DataFlow 的 Operator/Pipeline/Storage/Prompt 重构设计 |
+| [AuLE-代码实现方案.md](./AuLE-代码实现方案.md) | **v0.2**：借鉴 DataFlow（arXiv:2512.16676）的重构设计。<br>已加**落地状态对照**——统一算子抽象✅已完成，storage/serving/prompt❌未做；<br>并裁决了与 [10](./10-action-plan.md) 的冲突（重构降级为支线） |
 | [AuLE-前沿调研报告.md](./AuLE-前沿调研报告.md) | 前沿调研 |
 | [埋雷引擎MVP开发清单-智能合约审计.md](./埋雷引擎MVP开发清单-智能合约审计.md) | M0–M7 可执行开发清单与 DoD |
 
@@ -70,10 +70,10 @@
 
 | 项 | 状态 |
 | --- | --- |
-| Level 1 · Detect | ✅ 3 模型 F1=1.000，qwen3.8-max 0.857 → **区分度不足，已饱和** |
+| Level 1 · Detect | ✅ 3 模型 F1=1.000，qwen3.8-max 0.857 → **区分度不足，已饱和**<br>⚠️ 这是在 **4 道独立题**上测的，含金量低，对外别单独引用这个数 |
 | Level 2 · Exploit | ✅ 打穿率 50–83%；**tx_origin 是终极区分题** |
 | Level 3 · 端到端 | 🔨 多文件仓库 + 四维打分，刚起步 |
-| 数据集 | 7 样本（3 雷 × {原题, 变体} + 1 诱饵）→ 目标 50+（MVP DoD） |
+| 数据集 | 7 个**样本目录** = **4 道独立题**（reentrancy / access_control / tx_origin / 诱饵）<br>+ 3 个 LLM 改写变体（`-v1`）→ 目标 50+（MVP DoD） |
 | Harbor 导出 | ✅ 本次新增（`run_harbor_export.py`） |
 | 跨赛道 | 🔨 三条赛道契约已定义，实现待做 |
 | **环境四维体检** | ✅ 本次新增（`run_env_quality.py`） |

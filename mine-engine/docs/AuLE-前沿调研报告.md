@@ -119,7 +119,7 @@
 |---|---|---|
 | P0 | 把 Level 3 难题做出来（StakingVault 业务逻辑雷） | 这是我们和 EVMbench 最大的差异 |
 | P0 | 加诱饵误报评分 | EVMbench 没有，我们有 |
-| P1 | 迁移到 OperatorABC/Pipeline 架构 | DataFlow 借鉴，但不阻塞实验 |
+| P1 | 迁移到 OperatorABC/Pipeline 架构 | DataFlow 借鉴，但不阻塞实验。<br>🟡 **进度（2026-10-01 核对）**：算子统一抽象**已完成**（四算子均继承 `IssueOperator`），<br>剩余 storage/serving/prompt 未做，已降级为支线，详见 [代码实现方案 v0.2](./AuLE-代码实现方案.md) |
 | P1 | 跑更多模型（至少 5 个） | EVMbench 被批评只测 14 个配置，我们要测够 |
 | P2 | 远程沙箱部署 | Harbor 借鉴，中期做 |
 | P2 | 加 patch 模式 | EVMbench 有，我们也应该有 |
