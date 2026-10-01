@@ -253,11 +253,13 @@ print([d.name_cn for d in list_domains()]); print(scaffold_checklist('corp-audit
 | [02-evolution](./docs/02-evolution.md) | 研究演进脉络（新手向，从"人出题"到"机器出题"） |
 | [03-landscape](./docs/03-landscape.md) | 同行 benchmark 全景与定位矩阵 |
 | [04-three-tracks](./docs/04-three-tracks.md) | 国家审计 / 企业审计 / 审计师三条赛道的数据设计 |
-| [05-ideas](./docs/05-ideas.md) | 12 个科研 idea（含创新性/工作量/风险评分） |
+| [05-ideas](./docs/05-ideas.md) | 13 个科研 idea（含创新性/工作量/风险评分） |
 | [06-roadmap](./docs/06-roadmap.md) | M7–M10 工程路线图 |
 | [07-synthetic-environment](./docs/07-synthetic-environment.md) | 合成环境数据：对标 AWM 与中科院综述，我们缺的三件工程件 |
 | [08-evaluation-craft](./docs/08-evaluation-craft.md) | 评测这门手艺：八个陷阱 + 报告必备清单 |
 | **[09-synthetic-env-playbook](./docs/09-synthetic-env-playbook.md)** | **三坐标手册：ALE / ALE-Bench / Harbor 分别解决什么问题，我们差在哪** |
+| [10-action-plan](./docs/10-action-plan.md) | 行动方案（待审核）：零基础可读，四步走 + 6 个待决策点 |
+| **[11-fundamentals](./docs/11-fundamentals.md)** 🌱 | **零基础从这篇开始**：用"一场考试"讲清全部名词，<br>收录 CSDN / 小红书的四种讲法，再讲三件事如何拼成 AuLE |
 
 可视化报告：[`docs/report.html`](./docs/report.html)
 
