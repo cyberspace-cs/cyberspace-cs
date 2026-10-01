@@ -80,10 +80,12 @@
 
 <header class="hero">
   <div class="wrap">
-    <div class="eyebrow">MINE-ENGINE · 研究报告 · 2026-10-01</div>
+    <div class="eyebrow">AuLE · ADAPTIVE AUDIT LAST EXAM · 研究报告 · 2026-10-01</div>
     <h1>当 benchmark 一发布就开始腐烂<br>我们造了一台会一直出新鲜考卷的机器</h1>
-    <p class="lede">mine-engine 不是审计 Agent，是"会自己出题的考试院"。
-    它在健康材料上程序化埋雷，用差分验证证明"雷确实是这次埋的"，从而自动产生 ground truth——
+    <p class="lede">
+    项目代号 <b>AuLE</b>，对标 <b>ALE / Agents' Last Exam</b>（Berkeley RDI, arXiv:2606.05405）。
+    mine-engine 不是审计 Agent，是"会自己出题的考试院"——
+    它在健康材料上程序化埋雷，用差分验证证明"雷确实是这次埋的"，从而自动产生 ground truth：
     题目无限、答案必真、背不下来。智能合约只是它落地的第一个赛道。</p>
     <div class="kpis">
       <div class="kpi"><b>4</b><span>领域无关组件</span></div>
@@ -119,6 +121,46 @@
     </div>
     <p>同类证据还有：CI-FSFD（Forvis Mazars × LORIA）指出财报舞弊检测领域普遍存在
     <b>随机切分导致的高估</b>；Harbor-Index 筛出的 82 道难题，<b>没有任何模型-harness 组合超过 30% 通过率</b>。</p>
+  </div>
+
+  <div class="card" style="border-color:#6741d9">
+    <h3 style="margin-top:0">最强旁证：ALE 自己都怕污染，只敢公开 10% 的题</h3>
+    <p><b>ALE（Agents' Last Exam）</b>——UC Berkeley RDI / Dawn Song 组，1,490 个任务、
+    55 个子领域、13 个行业集群，由 <b>250–300+ 行业专家</b>从真实完成过的项目中出题。
+    <span class="tag t-warn">注意：不是 Sakana 的 ALE-Bench</span></p>
+
+    <table style="margin:14px 0">
+      <tr><th style="width:150px">ALE 层</th><th style="width:110px">通过率</th><th style="width:150px">AuLE 对应</th><th>我们现状</th></tr>
+      <tr><td>Near-Term（59 题）</td><td>~30%</td><td>Level 1 Detect</td>
+        <td><span class="tag t-bad">模型 F1=1.0，太易</span> 应降级为"训练题"而非评测题</td></tr>
+      <tr><td>Full-Spectrum（55 题）</td><td>~20%</td><td>Level 2 Exploit</td>
+        <td><span class="tag t-ok">打穿率 50–83%，接近</span></td></tr>
+      <tr><td><b>Last-Exam（36 题）</b></td><td><b>~2.6%</b></td><td>Level 3 端到端</td>
+        <td><span class="tag t-warn">刚起步，两模型满分</span> 远不够难</td></tr>
+    </table>
+
+    <div class="callout bad">
+      <b>最扎心的数字：</b>Codex + GPT-5.5 在 Terminal-Bench 上 <b>82%</b>，
+      在 ALE Last-Exam 上 <b>0%</b>。
+    </div>
+
+    <p><b>而它防污染的办法是：</b>1,490 题里<b>只公开 150 题（约 10%）</b>，其余留作 held-out。
+    这意味着 ALE 有 <b>90% 的题目无法用于公开评测</b>——因为一公开就会被污染。</p>
+
+    <div class="callout ok">
+      <b>这就是我们的论文切口：</b>ALE 用"少公开"这种笨办法防污染，代价是 90% 题目不能公开评测；
+      我们的引擎路线是 <b>100% 可公开评测且不怕被背</b>——因为题是每次现生成的。
+      这是<b>结构性优势</b>，必须写进 related work。
+    </div>
+
+    <p style="margin-top:14px"><b>ALE 的三条纪律，我们已遵守但没讲出来：</b></p>
+    <ul>
+      <li><b>能代码判的绝不用 LLM 判</b>；必须用 LLM 时用窄粒度 yes/no probe，不做整体打分
+        → 我们的 Foundry 差分正是 ALE 说的 "Executable / Behavioral" 评分模式</li>
+      <li><b>Gate-and-score</b>：硬前置（如 PoC 编译）不过直接 0 分，过了 gate 才评质量
+        → <span class="tag t-warn">待加</span></li>
+      <li><b>反作弊审查</b>：主动构造"作弊解法"验证指标不会被刷 → 我们有诱饵，但缺系统性审查</li>
+    </ul>
   </div>
 
   <div class="card">

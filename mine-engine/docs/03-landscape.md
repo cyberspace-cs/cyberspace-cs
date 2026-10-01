@@ -30,6 +30,58 @@ Harbor 正在成为"跑分"的标准插座。我们的题**必须**能导出成 
 
 ---
 
+## 1.5 头号对标：ALE（Agents' Last Exam）
+
+> **注意**：ALE 指 **Agents' Last Exam**（UC Berkeley RDI / Dawn Song 组，
+> arXiv:2606.05405，2026-06），**不是** Sakana AI 的 ALE-Bench（AtCoder 启发式算法竞赛）。
+> 两者简称撞车，别搞混。
+
+| 项 | 内容 |
+| --- | --- |
+| 规模 | **1,490 个任务实例**，55 个子领域，13 个行业集群（O*NET / SOC 2018 美国职业分类法） |
+| 题目来源 | **250–300+ 行业专家**真实完成过的项目（不是合成题），专家通过专门入口提交 |
+| 三层难度 | **Near-Term** 59 题 ~30% 通过率 / **Full-Spectrum** 55 题 ~20% / **Last-Exam** 36 题 **~2.6%** |
+| 最扎心的数字 | **Codex + GPT-5.5 在 Terminal-Bench 上 82%，在 ALE Last-Exam 上 0%** |
+| 评分铁律 | **能代码判的绝不用 LLM 判**；必须用 LLM 时用**窄粒度 yes/no probe**，不做整体打分 |
+| 七种 artifact 评分 | Exact/hashed、Structured tabular、Geometric、Visual、Behavioral、Free-text rubric、Executable |
+| **防污染** | **1,490 题中只公开 150 题（约 10%）**，其余留作防污染 held-out |
+| 任务生产五阶段 | 专家出题 → 初筛 Review → 工程实现 → 最终 QC（reproducibility + 评分校准）→ 反作弊审查 |
+| Gate-and-score | 硬前置条件不通过直接 0 分（如 PoC 编译失败），过了 gate 才评质量 |
+| 定位 | **living benchmark**：任务池随新行业接入持续增长；目标 5,000 题 |
+
+### ALE 对我们的三重意义
+
+1. **它自己就在防污染 —— 而且用的是"少公开"这种笨办法。**
+   1,490 题只放 150 题出来。这从侧面证明了我们核心判断的正确性：
+   *污染是行业公认的头号问题*。而 ALE 的代价是**10% 的题目能公开评测，90% 只能自己藏着**；
+   我们的引擎路线是**100% 可公开评测且不怕被背**——这是结构性优势，必须写进论文 related work。
+
+2. **"反 LLM-as-judge"是我们已经遵守但没讲出来的纪律。**
+   我们的差分验证（Foundry 真跑）就是 ALE 说的 "Executable / Behavioral" 评分模式。
+   对标 ALE 的七种 artifact 模式，我们目前用到：
+   - `Executable`（forge test 差分）✅ Level 1 已用
+   - `Structured tabular`（findings JSON 字段匹配）✅ 已用
+   - `Behavioral`（攻击后余额变化）🔨 run_exploit 部分用到
+   - `Free-text rubric`（报告质量）❌ 未做（Level 3 报告维度待实现）
+
+3. **三层难度体系可以直接映射到我们的 Level 1/2/3：**
+   | ALE | 通过率 | AuLE 对应 | 我们现状 |
+   |---|---|---|---|
+   | Near-Term | ~30% | Level 1 Detect | ❌ 模型 F1=1.0，**太易**，应降级为"训练题" |
+   | Full-Spectrum | ~20% | Level 2 Exploit | ✅ 打穿率 50–83%，接近 |
+   | Last-Exam | ~2.6% | Level 3 端到端 | 🔨 刚起步，两模型满分，**远不够难** |
+
+   **关键洞察**：ALE 的 Last-Exam 不是"更难的 Near-Term"，而是"大多数模型 0% 通过"——
+   它锚定的是长期研究方向，不是日常调参。我们缺的正是这一层。
+
+### 我们必须补上的三件事（对照 ALE）
+
+- [ ] **Gate-and-score**：Level 3 评分改成 Gate（JSON 可解析？PoC 能编译？PoC 跑通了吗？）→ 才评质量
+- [ ] **数据集版本化**：`datasets/v0.1 / v0.2 / v0.3` + README 记录每版 git hash、通过率、已知问题
+- [ ] **反作弊审查**：主动构造"作弊解法"（如不读代码直接报所有函数有漏洞）验证指标不会被刷
+
+---
+
 ## 2. 同赛道：智能合约审计
 
 ### EVMbench（OpenAI × Paradigm，2026）— 头号标杆

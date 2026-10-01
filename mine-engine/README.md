@@ -1,5 +1,8 @@
 # mine-engine · 动态对抗审计考试的埋雷引擎（M0–M3）
 
+> **项目代号：AuLE = Adaptive Audit Last Exam**（自适应审计终局考试）
+> 对标 **ALE / Agents' Last Exam**（UC Berkeley RDI, arXiv:2606.05405）。
+
 把「动态对抗考试 / Adaptive Verifier」落到**智能合约审计**垂直场景的最小可用引擎：
 自动在**健康合约**上做一次最小化、可复现的程序变换（埋雷），用**差分 PoC**
 证明雷确实是这次埋进去的，再把审计 Agent 的报告对 ground truth 判分。
@@ -116,6 +119,22 @@ py run_benchmark.py
 | qwen3.8-max | 6 | 2 | 0 | 1.000 | 0.750 | 0.857 |
 
 **发现**：① deepseek-v4-pro（官方真实模型名，V4-Pro-0813）满分；② 上次 deepseek-v4-flash 翻车这次满分，说明单次跑有随机性，baseline 需多次取平均；③ LLM 变体题让 qwen3.8-max 误报 2 处（precision 0.75）——改写后的代码让大模型过度敏感。区分度刚起步，题还要继续加难。
+
+## Exploit 模式（Level 2）实测
+
+| 模型 | 打穿率 | 关键失败 |
+|---|---|---|
+| qwen3.8-flash | 5/6 | tx_origin 变体 fail "not owner" |
+| qwen3.8-max | 5/6 | tx_origin 原题 fail "not owner" |
+| deepseek-v4-flash | 4/6 | reentrancy 变体 no_code；tx_origin 变体 fail |
+| deepseek-v4-pro | 3/6 | reentrancy 截断；access_control 变体 no_code |
+
+三条发现（写论文要用）：
+1. **Detect 满分 ≠ Exploit 打穿**——同一模型在两种模式下的排名会变；
+2. **tx_origin 是终极区分题**——模型不知道 Foundry 要用 `vm.prank(sender, origin)` 双参模拟；
+3. **deepseek-v4-pro 反而不如 flash**——这不是推理能力问题，是长代码生成时
+   `max_tokens=4096` 不够导致**截断**（sample-0001 直接 `vm.deal(vict` 断掉）。
+   ⚠️ 这是**评测假象**，不修正会把"生成长度限制"误当成"能力差异"。
 
 ## M7 · 抗污染、可复现、接入行业标准
 
