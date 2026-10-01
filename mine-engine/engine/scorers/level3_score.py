@@ -23,17 +23,23 @@ _TYPE_ALIASES = {
     "delegatecall": ["delegatecall"],
 }
 
-# 地面真值：LendingPoolPlanted 的两个雷 + 一个诱饵
+# 地面真值：StakingVaultPlanted 的三个雷 + 三个诱饵
 GROUND_TRUTH = [
     {
         "vuln_type": "reentrancy",
-        "contract": "LendingPoolPlanted",
+        "contract": "StakingVaultPlanted",
         "function": "withdraw",
         "severity": "critical",
     },
     {
+        "vuln_type": "integer_error",
+        "contract": "StakingVaultPlanted",
+        "function": "interestOf",
+        "severity": "high",
+    },
+    {
         "vuln_type": "access_control",
-        "contract": "LendingPoolPlanted",
+        "contract": "StakingVaultPlanted",
         "function": "setInterestRate",
         "severity": "high",
     },
@@ -41,7 +47,9 @@ GROUND_TRUTH = [
 
 # 诱饵：报了这些就算误报
 DECOYS = [
-    {"contract": "LendingPoolPlanted", "function": "sweep"},
+    {"contract": "StakingVaultPlanted", "function": "sweep"},
+    {"contract": "StakingVaultPlanted", "function": "emergencyWithdraw"},
+    {"contract": "StakingVaultPlanted", "function": "togglePause"},
 ]
 
 

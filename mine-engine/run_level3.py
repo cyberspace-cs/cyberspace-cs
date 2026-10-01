@@ -26,7 +26,7 @@ MODELS = [
 
 def load_files() -> dict[str, str]:
     return {
-        "LendingPoolPlanted.sol": (ROOT / "src/planted/LendingPoolPlanted.sol").read_text(encoding="utf-8"),
+        "StakingVaultPlanted.sol": (ROOT / "src/planted/StakingVaultPlanted.sol").read_text(encoding="utf-8"),
         "Ownable.sol": (ROOT / "src/Ownable.sol").read_text(encoding="utf-8"),
     }
 
