@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
 from engine.agents import AuditAgent
-from engine.llm import LLMClient
+from engine.llm import LLMClient, load_dotenv
 from engine.scorers.report_score import score_report
 
 
@@ -34,6 +34,7 @@ def load_ground_truth(sample_dir: Path) -> list:
 
 
 def main() -> None:
+    load_dotenv()
     base_url = os.environ["LLM_BASE_URL"]
     api_key = os.environ["LLM_API_KEY"]
     filter_models = [

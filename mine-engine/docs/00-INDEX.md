@@ -26,6 +26,7 @@
 | **09** | [**合成数据与环境工程：三坐标校准手册**](./09-synthetic-env-playbook.md) ⭐ | **先读这篇** | 用 **ALE / ALE-Bench / Harbor** 三个坐标重新梳理全盘：怎么造环境、怎么封装、怎么判分、怎么让分数不封顶 |
 | **10** | [**行动方案（草稿 · 待审核）**](./10-action-plan.md) 📌 | **拍板的人** | 零基础可读，全程用一个真实例子讲到底；四步走 + 6 个待决策点 |
 | **11** | [**这个领域的基础（从零讲起）**](./11-fundamentals.md) 🌱 | **零基础的人** | **先看这篇**。用"一场考试"讲清 Agent/环境/benchmark/harness，<br>收录 CSDN 与小红书的四种讲法，再讲 ALE / ALE-Bench / Harbor 三件事，<br>最后逐块对照"这些基础如何拼成 AuLE" |
+| **12** | [**真实模型接入与踩坑记**](./12-真实模型接入与踩坑记.md) 🔌 | **要真跑的人** | 三组 key 实测结论、模型名静默换名、thinking 截断陷阱、真实 benchmark 数据、单价来源 |
 | — | [可视化报告 report.html](./report.html) | 所有人 | 一页看懂：痛点 / 脉络 / 定位 / 赛道 / idea / 路线图 |
 
 > 🌱 **完全没基础？从 [11](./11-fundamentals.md) 开始**。
@@ -81,6 +82,7 @@
 | 难度连续旋钮 | ❌ 未做（I11，我们独有的牌） |
 | **时间与成本记账** | ✅ 已落地（`run_benchmark.py` + `engine/llm/pricing.py`）；<br>口径为 **cost per solved task**；单价需自行配置，未配置显示 n/a |
 | **防伪检查（dummy / oracle check）** | ✅ 已落地（`run_dummy_check.py`）；7 样本在 v1/v2 下全通过；<br>并揪出 v2 判分器的诱饵题 bug（已修） |
+| **真实端到端跑通** | ✅ 已接真实 DeepSeek key 跑通 7 样本（v2，repeat=1）：<br>flash F1=0.730 / $0.0037 / 5-7s；pro F1=0.871 / $0.0456 / 6-7s。<br>⚠️ repeat=1 不显著；详见 [12](./12-真实模型接入与踩坑记.md) |
 | 离线自测 | ✅ 已落地（`run_offline_smoke.py`，13 项断言，无需 API key） |
 
 ### 我们在学术分类里的位置（写论文必用）
@@ -122,7 +124,10 @@
 2. **tx_origin 是终极区分题**——模型不知道 Foundry 要用 `vm.prank(sender, origin)` 双参模拟
 3. **deepseek-v4-pro 打穿率（3/6）反而低于 flash（4/6）**——这不是推理能力问题，
    是长代码生成时 `max_tokens=4096` 不够导致**截断**（sample-0001 直接 `vm.deal(vict` 断掉）。
-   ⚠️ 这是一个**评测假象**，若不修正会把"生成长度限制"误当成"能力差异"
+   ⚠️ 这是一个**评测假象**，若不修正会把"生成长度限制"误当成"能力差异"。
+   已在 `engine/llm/client.py` 修复：默认上限提到 4096、`.env` 给到 8192，
+   并加了 `truncated` 检测——空答案会被显式报警（`--strict` 直接报错），不再静默记 0 分。
+   （同样会坑 Detect：v4-pro 在 `max_tokens=1024` 时曾返回空 findings，HTTP 200。）
 
 ---
 

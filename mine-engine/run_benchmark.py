@@ -30,6 +30,10 @@ M7+ 新增：时间与成本记账（docs/10-action-plan 第一步）
 
 from __future__ import annotations
 
+import warnings
+
+from collections import defaultdict
+
 import argparse
 import json
 import os
@@ -42,7 +46,8 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
 from engine.agents import AuditAgent  # noqa: E402
-from engine.llm import LLMClient, PriceTable, cost_per_solved_task  # noqa: E402
+from engine.llm import LLMClient, PriceTable, cost_per_solved_task, load_dotenv  # noqa: E402
+from engine.llm.client import LLMTruncatedWarning  # noqa: E402
 from engine.scorers.report_score import score_report, score_report_v2  # noqa: E402
 
 
@@ -65,7 +70,15 @@ def main() -> int:
     ap.add_argument("--out", default="", help="结果 JSON 落盘路径")
     ap.add_argument("--solved-threshold", type=float, default=0.5,
                     help="F1 >= 该值记为'做对'，用于 cost per solved task（默认 0.5）")
+    ap.add_argument("--timeout", type=int, default=180, help="单次请求超时秒数（默认 180）")
+    ap.add_argument("--strict", action="store_true",
+                    help="遇到疑似截断的空答案直接报错中止，而不是记 0 分继续跑")
     args = ap.parse_args()
+
+    # .env 加载（若环境变量已有则不被覆盖）；让密钥从文件读取，不必每次 export
+    loaded = load_dotenv()
+    if loaded:
+        print(f"（已从 .env 加载 {loaded} 条配置）")
 
     base_url = os.environ["LLM_BASE_URL"]
     api_key = os.environ["LLM_API_KEY"]
@@ -73,6 +86,10 @@ def main() -> int:
     strategy = os.environ.get("LLM_PROMPT", "standard")
     score_fn = score_report_v2 if args.scorer == "v2" else score_report
     prices = PriceTable.load(ROOT)
+
+    # 截断告警默认只响一次（Python 的默认去重），跑 benchmark 时希望每题都看见：
+    # 同一 nl filter 复位，保证每个模型至少报一次。
+    warnings.simplefilter("always", LLMTruncatedWarning)
 
     ds = ROOT / "datasets"
     index = [
@@ -94,12 +111,21 @@ def main() -> int:
 
     summary, all_runs = [], {}
     for model in models:
-        client = LLMClient(base_url=base_url, api_key=api_key, model=model, temperature=0.0)
+        client = LLMClient(base_url=base_url, api_key=api_key, model=model,
+                           temperature=float(os.environ.get("LLM_TEMPERATURE", "0") or 0),
+                           timeout=args.timeout,
+                           max_tokens=int(os.environ.get("LLM_MAX_TOKENS", 4096)),
+                           thinking=os.environ.get("LLM_THINKING") or None,
+                           strict=args.strict)
         agent = AuditAgent(client, strategy=strategy)
         per_sample = {}
-        # 模型级累计
         m_wall = m_tin = m_tout = 0
         m_calls = 0
+        m_empty = 0
+        # 用「应答里实际返回的模型名」记账：有的网关会把过时的请求名静默换成别的模型
+        # （实测 deepseek 官方会把 deepseek-v4-flash 换成 deepseek-flash），
+        # 按请求名算钱就会算到另一个模型头上。
+        buckets = defaultdict(lambda: {"tin": 0, "tout": 0})
 
         for s in index:
             planted = (ds / s["planted"]).read_text(encoding="utf-8")
@@ -108,13 +134,20 @@ def main() -> int:
             f1s, recs, precs, walls = [], [], [], []
             last = {"tp": 0, "fp": 0, "fn": 0}
             s_tin = s_tout = 0
+            s_empty = 0
             for _ in range(max(1, args.repeat)):
                 t0 = time.time()
                 report = agent.audit(planted)
                 wall_ms = int((time.time() - t0) * 1000)
                 usage = report.get("_usage") or {}
-                s_tin += usage.get("tokens_in", 0)
-                s_tout += usage.get("tokens_out", 0)
+                tin = usage.get("tokens_in", 0)
+                tout = usage.get("tokens_out", 0)
+                s_tin += tin
+                s_tout += tout
+                buckets[usage.get("model", model)]["tin"] += tin
+                buckets[usage.get("model", model)]["tout"] += tout
+                if usage.get("empty_text"):
+                    s_empty += 1
                 m_calls += 1
                 walls.append(wall_ms)
 
@@ -127,6 +160,7 @@ def main() -> int:
             m_wall += sum(walls)
             m_tin += s_tin
             m_tout += s_tout
+            m_empty += s_empty
 
             per_sample[s["sample_id"]] = {
                 "vuln_type": s["vuln_type"],
@@ -135,18 +169,20 @@ def main() -> int:
                 "recall_mean": round(statistics.fmean(recs), 4),
                 "precision_mean": round(statistics.fmean(precs), 4),
                 "runs": len(f1s),
+                "empty_text_runs": s_empty,
                 # --- 时间与成本 ---
                 "wall_ms_mean": int(statistics.fmean(walls)),
                 "tokens_in": s_tin,
                 "tokens_out": s_tout,
                 "cost_usd": prices.estimate_cost(model, s_tin, s_tout),
             }
+            empty_note = f" ⚠️空答案{s_empty}/{len(f1s)}" if s_empty else ""
             std_note = f" ±{per_sample[s['sample_id']]['f1_std']:.3f}" if len(f1s) > 1 else ""
             print(f"  [{model}] {s['sample_id']} gt={s['vuln_type']:<15} "
                   f"tp={last['tp']} fp={last['fp']} fn={last['fn']} "
                   f"R={last['recall']:.3f} P={last['precision']:.3f} "
                   f"F1={per_sample[s['sample_id']]['f1_mean']:.3f}{std_note} "
-                  f"{per_sample[s['sample_id']]['wall_ms_mean']}ms")
+                  f"{per_sample[s['sample_id']]['wall_ms_mean']}ms{empty_note}")
 
         # 全样本汇总（按样本平均，避免长样本主导）
         if per_sample:
@@ -158,8 +194,19 @@ def main() -> int:
             m_f1 = m_r = m_p = m_std = 0.0
 
         # --- 成本：ALE-Bench 口径 ---
+        # 按实际应答模型名分别计价再求和；任一个模型没配单价，总成本就显示 n/a
         n_solved = sum(1 for v in per_sample.values() if v["f1_mean"] >= args.solved_threshold)
-        total_cost = prices.estimate_cost(model, m_tin, m_tout)
+        costs = [prices.estimate_cost(name, b["tin"], b["tout"]) for name, b in buckets.items()]
+        if costs and all(c is not None for c in costs):
+            total_cost = round(sum(costs), 6)
+        elif buckets:
+            # 有一部分模型没单价：宁可显示 n/a，也不拿"已知的部分"冒充总成本
+            missing = [name for name, b in buckets.items()
+                       if prices.estimate_cost(name, b["tin"], b["tout"]) is None]
+            total_cost = None
+            print(f"⚠️  [{model}] 以下模型缺少单价，成本记 n/a：{', '.join(missing)}")
+        else:
+            total_cost = prices.estimate_cost(model, m_tin, m_tout)
         cps = cost_per_solved_task(total_cost, n_solved)
 
         summary.append({
@@ -168,27 +215,38 @@ def main() -> int:
             "tokens_in": m_tin, "tokens_out": m_tout,
             "cost_usd": total_cost, "solved": n_solved, "n_tasks": len(per_sample),
             "cost_per_solved_usd": cps,
+            "empty_text_calls": m_empty, "truncated_calls": client.truncated_calls,
+            "served_by": sorted(buckets.keys()),
         })
         all_runs[model] = per_sample
 
     # ---------------------------------------------------------------- 分数榜
     print("\n" + "=" * 100)
-    print(f"{'model':<24} {'Recall':>7} {'Prec':>7} {'F1':>7} {'F1 std':>8} "
-          f"{'Wall(s)':>8} {'Tokens':>10} {'Cost':>9} {'Solved':>7} {'$/solved':>10}")
-    print("-" * 100)
+    print(f"{'model':<20} {'Recall':>7} {'Prec':>7} {'F1':>7} {'F1 std':>8} "
+          f"{'Wall(s)':>8} {'Tokens':>9} {'Cost':>9} {'Solved':>7} {'$/solved':>10} {'空答':>5}")
+    print("-" * 108)
     for r in summary:
-        print(f"{r['model']:<24} {r['recall']:>7.3f} {r['precision']:>7.3f} "
+        print(f"{r['model']:<20} {r['recall']:>7.3f} {r['precision']:>7.3f} "
               f"{r['f1']:>7.3f} {r['f1_std']:>8.3f} "
-              f"{r['wall_ms']/1000:>8.1f} {r['tokens_in']+r['tokens_out']:>10} "
+              f"{r['wall_ms']/1000:>8.1f} {r['tokens_in']+r['tokens_out']:>9} "
               f"{fmt_money(r['cost_usd']):>9} {str(r['solved'])+'/'+str(r['n_tasks']):>7} "
-              f"{fmt_money(r['cost_per_solved_usd']):>10}")
-    print("=" * 100)
+              f"{fmt_money(r['cost_per_solved_usd']):>10} {r['empty_text_calls']:>5}")
+    print("=" * 108)
+    for r in summary:
+        served = [m for m in r["served_by"] if m != r["model"]]
+        if served:
+            print(f"ℹ️  {r['model']} 的请求被网关换成 {', '.join(served)}；成本按后者单价计算")
 
     if args.repeat == 1:
         print("提示：当前为单次采样，结论不稳定。建议加 --repeat 5 再对比模型。")
     if any(r["tokens_in"] + r["tokens_out"] == 0 for r in summary):
         print("⚠️  token 数全为 0：说明 LLM 网关没有返回 usage，成本无从计算。"
               "请确认网关是否支持该字段（部分代理会剥掉 usage）。")
+    if any(r["empty_text_calls"] for r in summary):
+        print("⚠️  存在空答案调用：其中一部分不是'模型认为没漏洞'，而是回答被 token 上限截断。"
+              "空答案会让 recall 悄悄变成 0，必须先看 Engine emitted 的截断告警再解读分数。")
+    if any(r["truncated_calls"] for r in summary):
+        print("⚠️  有调用被 token 上限截断：提高 LLM_MAX_TOKENS 或 LLM_THINKING=off 后重跑。")
     if not prices.configured:
         print("⚠️  成本列为 n/a：未配置 LLM_PRICES。这不代表免费 —— 是'不知道'。")
 

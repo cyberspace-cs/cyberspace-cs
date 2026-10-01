@@ -6,6 +6,7 @@ from .client import (
     extract_usage,
 )
 from .pricing import PriceTable, cost_per_solved_task
+from .env import load_dotenv
 
 __all__ = [
     "LLMClient",
@@ -15,4 +16,5 @@ __all__ = [
     "extract_usage",
     "PriceTable",
     "cost_per_solved_task",
+    "load_dotenv",
 ]

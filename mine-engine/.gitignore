@@ -27,6 +27,8 @@ __pycache__/
 results_level3.json
 results_benchmark.json
 results_offline_smoke*.json
+results_real_*.json
+results_*.json
 test/ModelPoC.t.sol
 
 # 单价表（含商业信息，且各人各环境不同；用 prices.example.json 作模板）

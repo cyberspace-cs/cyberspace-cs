@@ -54,12 +54,15 @@ def _extract_json(text: str) -> dict:
 
 
 class AuditAgent:
-    def __init__(self, client: LLMClient, strategy: str = "standard"):
+    def __init__(self, client: LLMClient, strategy: str = "standard",
+                 max_tokens: int | None = None):
         self.client = client
         if strategy not in PROMPT_STRATEGIES:
             raise KeyError(f"未知 prompt 策略: {strategy}，可选 {list(PROMPT_STRATEGIES)}")
         self.strategy = strategy
         self.system_prompt = PROMPT_STRATEGIES[strategy]
+        # None = 用 client 的默认上限（LLM_MAX_TOKENS）。thinking 模型需要更大的预算。
+        self.max_tokens = max_tokens
 
     def audit(self, planted_source: str) -> dict:
         messages = [
@@ -74,14 +77,18 @@ class AuditAgent:
         ]
         # 用 chat_detailed 而非 chat，才能拿到 token 用量与耗时。
         # （chat() 只返回文本，用量会被丢掉 —— 成本就无从计算）
-        resp = self.client.chat_detailed(messages, max_tokens=1024)
+        resp = self.client.chat_detailed(messages, max_tokens=self.max_tokens)
         report = _extract_json(resp.text)
         findings = report.get("findings", [])
         if not isinstance(findings, list):
             findings = []
+        # _usage 下划线开头：明确表示这是元信息，不参与判分。
+        # truncated=True 时 findings 是空的是**预算问题**，不是"模型认为没漏洞"——
+        # 两者外表一样（都是空 findings），必须用元信息区分，否则评测结果会悄悄失真。
+        usage = resp.as_dict()
+        usage["empty_text"] = resp.empty_text
         return {
             "findings": findings,
             "raw": resp.text,
-            # 下划线开头：明确表示这是元信息，不参与判分
-            "_usage": resp.as_dict(),
+            "_usage": usage,
         }

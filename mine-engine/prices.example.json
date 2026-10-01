@@ -1,0 +1,7 @@
+{
+  "_note": "单价模板。复制到 prices.json 并填真实数字（单位 USD/百万 token）。field 认 in/out 或 input/output 两种写法。未配置时成本列显示 n/a（不是 0）。绝不编造价格——查不到就留空，宁可显示 n/a。",
+  "deepseek-flash": {"in": 0.30, "out": 1.20},
+  "deepseek-v4-pro": {"in": 1.32, "out": 3.96},
+  "qwen3.8-flash": {"in": 0.20, "out": 2.00},
+  "qwen3.8-max": {"in": 0.80, "out": 8.00}
+}

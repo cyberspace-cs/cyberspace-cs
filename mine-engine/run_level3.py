@@ -14,6 +14,9 @@ sys.path.insert(0, str(ROOT))
 from engine.llm.client import LLMClient
 from engine.agents.level3_agent import Level3AuditAgent
 from engine.scorers.level3_score import score_level3, GROUND_TRUTH
+from engine.llm import load_dotenv
+
+load_dotenv()  # 让 .env 里的密钥在下面这行读取之前就位
 
 BASE = "https://api.deepseek.com/v1"
 KEY = os.environ["LLM_API_KEY"]  # 从环境变量读
