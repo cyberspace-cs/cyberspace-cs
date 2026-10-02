@@ -113,22 +113,42 @@ def main() -> None:
 
     # 2b) 可选：LLM 变体算子（DataFlow PromptedGenerator）。
     #     环境变量 LLM_VARIATIONS>=1 且配了 LLM_API_KEY 时开启；变体再过同一差分闸门。
+    #     第三步（自我修正循环）：验证失败的变体不丢弃，把 forge 报错喂回 LLM 重生成，
+    #     最多重试 GEN_MAX_RETRIES 次（默认 2）。记录 retry_count 用于算平均重试次数。
     n_var = int(os.environ.get("LLM_VARIATIONS", "0"))
+    variant_added = 0
+    variant_total_retries = 0
     if n_var > 0 and os.environ.get("LLM_API_KEY"):
         from engine.llm import LLMClient
         from engine.operators.variation import VariationOperator
 
         good = [r for r in raw if r.get("valid") and r["issues"]]
         vary = VariationOperator(LLMClient(), k=n_var)
+        max_retries = int(os.environ.get("GEN_MAX_RETRIES", "2"))
         variants = vary.run(good)
         new_variants = [r for r in variants if r.get("variation")]
-        print(f"  [变体] 请求生成 {len(new_variants)} 个 LLM 变体，过差分闸门中...")
-        if new_variants:
-            vmap = {r["sample_id"]: r for r in validator.run(new_variants)}
-            for r in new_variants:
-                checked = vmap.get(r["sample_id"], r)
+        print(f"  [变体] 请求生成 {len(new_variants)} 个 LLM 变体，过差分闸门"
+              f"（失败则自我修正，最多重试 {max_retries} 次）...")
+        for v in new_variants:
+            current = v
+            attempts = 0
+            while attempts <= max_retries:
+                vmap = {r["sample_id"]: r for r in validator.run([current])}
+                checked = vmap.get(current["sample_id"], current)
                 if checked.get("valid"):
-                    raw.append(checked)
+                    current = checked
+                    break
+                # 自我修正：把报错喂回 LLM 重生成
+                attempts += 1
+                fixed = vary.fix_variant(checked, checked.get("validation_log", ""))
+                if not fixed:
+                    break
+                current = {**current, "planted_source": fixed}
+            current["retry_count"] = attempts
+            variant_total_retries += attempts
+            if current.get("valid"):
+                raw.append(current)
+                variant_added += 1
 
     # 2c) 去重（filtering operator）：normalize 后指纹去重
     from engine.validators.dedup import dedup
@@ -207,6 +227,10 @@ def main() -> None:
     print(f"  组合/生成样本: {total}")
     print(f"  差分通过: {passed}    丢弃: {failed}    有效率: {rate:.1f}%")
     print("  漏洞类型分布: " + ", ".join(f"{k}={v}" for k, v in sorted(dist.items())))
+    if variant_added or variant_total_retries:
+        avg_retry = (variant_total_retries / variant_added) if variant_added else 0.0
+        print(f"  自我修正循环：变体通过 {variant_added} 个，累计重试 {variant_total_retries} 次，"
+              f"平均 {avg_retry:.2f} 次/通过（业界基线 ~1.13 次，见 doc 07）")
     if failures:
         print("  失败明细:")
         for f in failures:

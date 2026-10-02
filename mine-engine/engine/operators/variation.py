@@ -63,3 +63,28 @@ class VariationOperator(IssueOperator):
                     # 变体生成失败就跳过，不影响主样本
                     continue
         return out
+
+    FIX_SYSTEM = """你是 Solidity 代码修复器。下面是一段合约，以及上一次提交后 Foundry 差分验证的报错。
+请只修导致验证失败的问题（编译错误 / 破坏正常功能 / 让漏洞不再可被 PoC 触发），
+保持合约名、函数签名、漏洞位置与行为不变。
+直接输出修正后的完整 .sol 文件，不要任何解释。"""
+
+    def fix_variant(self, rec: dict, error_log: str, max_tokens: int = 1500) -> "str | None":
+        """自我修正循环（行动方案第三步）：把验证失败的错误喂回 LLM，返回修正后源码。
+
+        返回 None 表示修复失败（LLM 不可用 / 解析不出 .sol / 异常）。
+        """
+        try:
+            raw = self.client.chat(
+                [
+                    {"role": "system", "content": self.FIX_SYSTEM},
+                    {"role": "user", "content": (
+                        f"【上一次验证报错】\n{error_log[-3000:]}\n\n"
+                        f"【待修复合约】\n```solidity\n{rec['planted_source']}\n```"
+                    )},
+                ],
+                max_tokens=max_tokens,
+            )
+            return _extract_solidity(raw) or None
+        except Exception:
+            return None

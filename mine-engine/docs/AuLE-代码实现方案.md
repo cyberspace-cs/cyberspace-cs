@@ -166,9 +166,10 @@ class Pipeline:
 return data["choices"][0]["message"]["content"]
 ```
 
-⚠️ **API 返回的 `usage` 字段被整个丢掉了**，所以现在**算不出成本**。
-这不是 DataFlow 的 serving 抽象问题，是实打实的功能缺口——
-已在 [`10-action-plan`](./10-action-plan.md) 第 3.1 节列为第一步第一小步。
+✅ **`usage` 透传已实现**（2026-10-02）：`engine/llm/client.py` 的 `chat_detailed()`
+现在把 API 返回的 `usage`（输入/输出 token、cache、reasoning）一并带出，成本已能算
+（见 [`10-action-plan`](./10-action-plan.md) 第 3.1 节 / [doc 12](./12-真实模型接入与踩坑记.md)）。
+这原本是实打实的功能缺口，现已补上。
 
 ---
 
@@ -206,8 +207,11 @@ v0.1 画的 Level 1 是一条长流水线：
 实际模型是**环境变量配置**，不写死数量：
 
 ```bash
-$env:LLM_MODELS="qwen3.8-flash,deepseek-v4-flash,qwen3.8-max"
+$env:LLM_MODELS="deepseek-flash,deepseek-v4-pro"
 ```
+> ⚠️ 模型名以网关实际为准：DeepSeek 官方网关只有 `deepseek-flash` / `deepseek-v4-pro`，
+> `deepseek-v4-flash` 会被**静默改名**为 `deepseek-flash`（见 [doc 12](./12-真实模型接入与踩坑记.md) 第 1 节）。
+> DashScope 上的名字是另一套（`qwen3.8-flash` / `qwen3.8-max` 等，但账户欠费暂不可用）。
 
 ---
 
@@ -216,7 +220,11 @@ $env:LLM_MODELS="qwen3.8-flash,deepseek-v4-flash,qwen3.8-max"
 v0.1 的五步里，**第 2 步已完成、第 1 步大部分已完成**。
 下面只列**真正还没做的**，按"收益 ÷ 工作量"排序，每条带**可执行的验收标准**。
 
-### S1 · 给 LLM 客户端补 usage 透传　⏱ 2 小时　🥇 最急
+### S1 · 给 LLM 客户端补 usage 透传　✅ 已完成（2026-10-02）
+
+> ✅ **状态：已完成。** `chat_detailed()` 已返回 `Usage(tokens_in/out)`，`run_benchmark.py`
+> 接入成本记账，真实跑测见 [doc 12](./12-真实模型接入与踩坑记.md)。原"最急"项已消除，
+> 故从"待做"移入"已完成"。下面保留原设计说明供追溯。
 
 **做什么**：`engine/llm/client.py` 的 `chat()` 除了返回文本，还要返回 token 用量。
 

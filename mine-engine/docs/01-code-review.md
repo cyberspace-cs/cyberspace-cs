@@ -72,6 +72,10 @@ sample-0001-v1 / 0002-v1 / 0003-v1   ← LLM 变体版本
 
 README 自己诚实地写了"区分度刚起步，题还要继续加难"——判断准确。
 
+> ⚠️ **本表是早期（DashScope 网关、v1 判分器、仅 6 个 findings）的 baseline，已被真实跑测刷新**：[doc 12](./12-真实模型接入与踩坑记.md) 用 DeepSeek 官方网关 + v2 判分器跑 7 样本，`deepseek-flash` 真实 F1=**0.730**（非 1.000）。
+> 早期 1.000 主要是**样本太小 + 网关/判分器差异**造成的饱和假象，请以 doc 12 为准。
+> 另：`deepseek-v4-flash` 在 DeepSeek 网关会被**静默改名为 `deepseek-flash`**（见 doc 12 第 1 节），本表里的 `deepseek-v4-flash` 实际即 `deepseek-flash`。
+
 ---
 
 ## 3. 问题清单（按严重度排序）

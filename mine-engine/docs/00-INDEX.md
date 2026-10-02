@@ -71,7 +71,7 @@
 
 | 项 | 状态 |
 | --- | --- |
-| Level 1 · Detect | ✅ 3 模型 F1=1.000，qwen3.8-max 0.857 → **区分度不足，已饱和**<br>⚠️ 这是在 **4 道独立题**上测的，含金量低，对外别单独引用这个数 |
+| Level 1 · Detect | 🟡 早期 qwen 三轮跑测 F1=1.000（4 道独立题，已饱和、含金量低）；<br>**真实 DeepSeek 跑测（[doc 12](./12-真实模型接入与踩坑记.md)，v2）flash=0.730 / v4-pro=0.871** → 换难设置仍有区分度空间。<br>⚠️ 早期 1.000 已被真实跑测刷新，**对外以 doc 12 为准** |
 | Level 2 · Exploit | ✅ 打穿率 50–83%；**tx_origin 是终极区分题** |
 | Level 3 · 端到端 | 🔨 多文件仓库 + 四维打分，刚起步 |
 | 数据集 | 7 个**样本目录** = **4 道独立题**（reentrancy / access_control / tx_origin / 诱饵）<br>+ 3 个 LLM 改写变体（`-v1`）→ 目标 50+（MVP DoD） |
@@ -79,9 +79,10 @@
 | 跨赛道 | 🔨 三条赛道契约已定义，实现待做 |
 | **环境四维体检** | ✅ 本次新增（`run_env_quality.py`） |
 | **时间/成本双轴 + 饱和检测** | ✅ 本次新增（`engine/analytics/openended.py`） |
-| 难度连续旋钮 | ❌ 未做（I11，我们独有的牌） |
+| 难度连续旋钮 | ✅ 已实现（`engine/operators/difficulty.py` + `run_difficulty_sweep.py`）；<br>离线结构指标已验证单调（诱饵/伪装/跨函数随刻度↑），F1 曲线需配 LLM（I11，我们独有的牌） |
 | **时间与成本记账** | ✅ 已落地（`run_benchmark.py` + `engine/llm/pricing.py`）；<br>口径为 **cost per solved task**；单价需自行配置，未配置显示 n/a |
 | **防伪检查（dummy / oracle check）** | ✅ 已落地（`run_dummy_check.py`）；7 样本在 v1/v2 下全通过；<br>并揪出 v2 判分器的诱饵题 bug（已修） |
+| **自我修正循环（题坏了喂回修）** | 🔨 骨架已实现（`batch_generate.py` 重试循环 + `VariationOperator.fix_variant`）；<br>把 forge 报错喂回 LLM 重生成，记录 retry_count；forge 实跑留 CI |
 | **真实端到端跑通** | ✅ 已接真实 DeepSeek key 跑通 7 样本（v2，repeat=1）：<br>flash F1=0.730 / $0.0037 / 5-7s；pro F1=0.871 / $0.0456 / 6-7s。<br>⚠️ repeat=1 不显著；详见 [12](./12-真实模型接入与踩坑记.md) |
 | 离线自测 | ✅ 已落地（`run_offline_smoke.py`，13 项断言，无需 API key） |
 
@@ -116,7 +117,7 @@
 | --- | --- | --- |
 | qwen3.8-flash | 5/6 | tx_origin 变体 fail "not owner" |
 | qwen3.8-max | 5/6 | tx_origin 原题 fail "not owner" |
-| deepseek-v4-flash | 4/6 | reentrancy 变体 no_code；tx_origin 变体 fail |
+| deepseek-flash（网关把 v4-flash 静默改名，见 [doc 12](./12-真实模型接入与踩坑记.md)） | 4/6 | reentrancy 变体 no_code；tx_origin 变体 fail |
 | deepseek-v4-pro | 3/6 | reentrancy 截断；access_control 变体 no_code |
 
 **三条发现（写论文要用）**：
