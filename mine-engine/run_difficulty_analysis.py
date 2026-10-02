@@ -3,7 +3,9 @@
 为什么分两批：完整一轮 54 次调用、耗时 12 分钟以上，超过工具单次超时上限。
 现在脚本支持 `--levels` 分批跑 + 逐档落盘，本脚本把多批结果合并 analysis。
 
-用法：python run_difficulty_analysis.py
+用法：
+    python run_difficulty_analysis.py                       # 用默认批次（flash）
+    python run_difficulty_analysis.py results_pro_*.json    # 指定其它批次（如 v4-pro）
 """
 from __future__ import annotations
 
@@ -19,10 +21,22 @@ BATCHES = ["results_diff_A.json", "results_diff_B.json", "results_diff_C.json"]
 SAMPLES = ["sample-0001", "sample-0002", "sample-0003"]
 
 
+def resolve_batches(argv: list[str]) -> list[str]:
+    """命令行给了文件就用给的，否则用默认批次。支持 shell 通配符展开后的路径。"""
+    if not argv:
+        return BATCHES
+    out = []
+    for a in argv:
+        p = Path(a)
+        out.append(a if p.exists() else a.replace("\\", "/"))
+    return out
+
+
 def main() -> int:
     rows: dict[int, dict] = {}
     used, skipped = [], []
-    for rel in BATCHES:
+    model: str | None = None
+    for rel in resolve_batches(sys.argv[1:]):
         p = ROOT / rel
         if not p.exists():
             continue
@@ -31,6 +45,8 @@ def main() -> int:
             skipped.append(f"{rel}(非 audit 模式)")
             continue
         used.append(rel)
+        #模型名在结果 JSON 的顶层，不在每行里
+        model = model or d.get("model")
         for r in d["rows"]:
             rows.setdefault(r["level"], r)
     if not rows:
@@ -107,9 +123,9 @@ def main() -> int:
     print(f"   → {'⚠️ 离散度偏大，正式结论需扩样本 + repeat≥5' if max(sds) > 0.25 else '✅ 可接受'}")
     print(f"   注：标准差大不完全是噪声 —— 部分变体模型确实找不到雷了，那正是难度该有的表现。")
 
-    out = ROOT / "results_difficulty_analysis.json"
+    out = ROOT / f"results_difficulty_analysis_{model or 'unknown'}.json"
     out.write_text(json.dumps({
-        "model": "deepseek-flash", "scorer": "v2", "samples": SAMPLES,
+        "model": model, "scorer": "v2", "samples": SAMPLES,
         "batches_used": used, "batches_skipped": skipped,
         "rows": [rows[lv] for lv in levels],
         "per_sample_f1_mean": {k: [round(x, 4) for x in v] for k, v in per_sample.items()},
@@ -118,5 +134,101 @@ def main() -> int:
     return 0
 
 
+def compare_models() -> int:
+    """对比两个模型的难度曲线，回答验收标准里「不同 AI 的曲线必须分开」那条。
+
+    只看均值会骗人：两条曲线可能在端点接近、中间交叉。因此这里同时给
+    逐档差值与秩相关（Spearman），只要**秩相关 < 0.9** 就说明形状不同。
+    """
+    import glob
+    flash = collect(sorted(glob.glob(str(ROOT / "results_diff_*.json"))))
+    #排除探针：只覆盖部分刻度的文件不能当完整曲线用（探针只测延迟量级）
+    pro = collect(sorted(glob.glob(str(ROOT / "results_pro_[AB].json"))))
+    if not flash or not pro:
+        print("需要两组结果：results_diff_*.json（flash）与 results_pro_[AB].json（v4-pro）")
+        print(f"  现状: flash={sorted(flash)} pro={sorted(pro)}")
+        return 1
+
+    common = sorted(set(flash) & set(pro))
+    if len(common) < 2:
+        print(f"⚠️ 两边共同刻度只有 {common}，无法比较曲线形状")
+        return 1
+    # 覆盖不全时必须提示：只测 2 个端点得出的"形状"没有说服力
+    if len(common) < 6:
+        print(f"⚠️ 只覆盖刻度 {common}（共 6 档）。端点比较有效，"
+              f"但'曲线形状'结论在补齐中间档之前不成立。")
+
+    print("=" * 96)
+    print("分离度验收：deepseek-flash vs deepseek-v4-pro 的难度曲线是否分开")
+    print("=" * 96)
+    print(f"{'刻度':<6}{'flash F1':>10}{'pro F1':>10}{'差(pro-flash)':>16}"
+          f"{'flash踩雷':>11}{'pro踩雷':>10}")
+    print("-" * 96)
+    diffs = []
+    for lv in common:
+        a = flash[lv]["f1_mean"]
+        b = pro[lv]["f1_mean"]
+        diffs.append(b - a)
+        print(f"{lv:<6}{a:>10.3f}{b:>10.3f}{b - a:>+16.3f}"
+              f"{flash[lv]['decoy_hits_mean']:>11.2f}{pro[lv]['decoy_hits_mean']:>10.2f}")
+
+    # Spearman 秩相关：形状相似度。1=完全同形，<0.9 视为形状不同。
+    def spearman(xs, ys):
+        def rank(v):
+            order = sorted(range(len(v)), key=lambda i: v[i])
+            r = [0.0] * len(v)
+            for pos, i in enumerate(order):
+                r[i] = pos + 1.0
+            return r
+        rx, ry = rank(xs), rank(ys)
+        n = len(xs)
+        mx, my = sum(rx) / n, sum(ry) / n
+        num = sum((a - mx) * (b - my) for a, b in zip(rx, ry))
+        den = (sum((a - mx) ** 2 for a in rx) * sum((b - my) ** 2 for b in ry)) ** 0.5
+        return num / den if den else float("nan")
+
+    fa = [flash[lv]["f1_mean"] for lv in common]
+    pa = [pro[lv]["f1_mean"] for lv in common]
+    rho = spearman(fa, pa)
+    print("-" * 96)
+    print(f"端点降幅  flash {fa[0]:.3f}→{fa[-1]:.3f} (Δ{fa[0]-fa[-1]:+.3f})   "
+          f"pro {pa[0]:.3f}→{pa[-1]:.3f} (Δ{pa[0]-pa[-1]:+.3f})")
+    print(f"曲线形状秩相关 ρ = {rho:.3f}"
+          f"（1=同形；<0.9 视为形状不同 → 难度对不同模型作用不同）")
+    print(f"最大逐档差距 {max(abs(d) for d in diffs):.3f} 出现在刻度 "
+          f"{common[diffs.index(max(diffs, key=abs))]}")
+
+    print("\n判读：")
+    if rho < 0.9:
+        print(f"  ✅ 两条曲线形状不同（ρ={rho:.3f}<0.9）—— 旋钮不是给所有模型套同一个难度，"
+              f"而是改变题目本身")
+    else:
+        print(f"  ⚠️ 两条曲线形状几乎相同（ρ={rho:.3f}）—— 旋钮对模型差异不敏感，"
+              f"用它区分模型的能力有限")
+    (ROOT / "results_difficulty_separation.json").write_text(json.dumps({
+        "levels": common,
+        "flash_f1": fa, "pro_f1": pa,
+        "flash_decoy": [flash[lv]["decoy_hits_mean"] for lv in common],
+        "pro_decoy": [pro[lv]["decoy_hits_mean"] for lv in common],
+        "spearman_rho": round(rho, 4),
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
+    print("落盘 results_difficulty_separation.json")
+    return 0
+
+
+def collect(paths: list[str]) -> dict[int, dict]:
+    rows: dict[int, dict] = {}
+    for p in paths:
+        try:
+            d = json.loads(Path(p).read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if d.get("mode") != "audit":
+            continue
+        for r in d.get("rows", []):
+            rows.setdefault(r["level"], r)
+    return rows
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(compare_models() if "--compare" in sys.argv[1:] else main())
