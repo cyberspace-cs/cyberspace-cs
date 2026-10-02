@@ -142,8 +142,9 @@ def compare_models() -> int:
     """
     import glob
     flash = collect(sorted(glob.glob(str(ROOT / "results_diff_*.json"))))
-    #排除探针：只覆盖部分刻度的文件不能当完整曲线用（探针只测延迟量级）
-    pro = collect(sorted(glob.glob(str(ROOT / "results_pro_[AB].json"))))
+    # pro 的来源：合并后的完整档位 + 整档跑完的 L1/L2（排除 A 的残档与分样本碎片）
+    pro = collect(sorted(glob.glob(str(ROOT / "results_pro_merged_*.json")))
+                  + sorted(glob.glob(str(ROOT / "results_pro_L[12].json"))))
     if not flash or not pro:
         print("需要两组结果：results_diff_*.json（flash）与 results_pro_[AB].json（v4-pro）")
         print(f"  现状: flash={sorted(flash)} pro={sorted(pro)}")
@@ -230,5 +231,97 @@ def collect(paths: list[str]) -> dict[int, dict]:
     return rows
 
 
+SAMPLE_IDS = ["sample-0001", "sample-0002", "sample-0003"]
+
+
+def merge_split_levels(pattern: str) -> int:
+    """把「按样本分开跑、同一档」的结果拼回完整的一档。
+
+    为什么需要：`deepseek-v4-pro` 在高档位单档要跑 5–10 分钟，超过工具单次超时上限，
+    只能 `--samples sample-0001` 这样一档拆三次跑。逐档落盘救不了"档内中断"
+    （一档内的 9 次调用是一个整体，中断则整档丢失）。
+    每个分样本文件里`f1_all` 的下标含义是**该样本自己的 0..repeat-1**，
+    所以拼接时必须按样本在SAMPLE_IDS 里的位置放回正确的偏移。
+    """
+    import glob
+    import re
+    files = sorted(glob.glob(str(ROOT / pattern)))
+    if not files:
+        print(f"没匹配到文件：{pattern}")
+        return 1
+    # 文件名里带样本号：results_pro_L3_s1.json / _s2.json
+    by_level: dict[int, dict[int, tuple[str, dict]]] = {}
+    for f in files:
+        m = re.search(r"_s(\d)\.json$", f)
+        if not m:
+            continue
+        idx = int(m.group(1)) - 1
+        try:
+            d = json.loads(Path(f).read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        for r in d.get("rows", []):
+            by_level.setdefault(r["level"], {})[idx] = (Path(f).name, r)
+
+    merged_out = {}
+    for lv in sorted(by_level):
+        parts = by_level[lv]
+        have = sorted(parts)
+        if have != list(range(len(SAMPLE_IDS))):
+            print(f"⚠️ 刻度 {lv} 只齐了样本 {have}，跳过合并（需要 0,1,2）")
+            continue
+        # parts 的结构是 {样本下标: (文件名, row)}，parts[0] 本身就是 (name, row)
+        base_name, base = parts[0]
+        repeat = len(base["f1_all"])
+        f1: list[float] = []
+        for idx in sorted(parts):
+            seg = parts[idx][1]["f1_all"]
+            f1.extend(seg)
+        # 权重字段：耗时/token/成本按调用次数加和，均值类按样本数平均
+        def wsum(key):
+            return sum(parts[i][1].get(key) or 0 for i in sorted(parts))
+
+        def wmean(key):
+            vals = [parts[i][1].get(key) for i in sorted(parts)]
+            vals = [v for v in vals if v is not None]
+            return st.fmean(vals) if vals else None
+
+        n = len(f1)
+        row = dict(base)
+        row["f1_all"] = f1
+        row["f1_mean"] = round(st.fmean(f1), 4)
+        row["f1_std"] = round(st.pstdev(f1), 4) if n > 1 else 0.0
+        row["precision_mean"] = wmean("precision_mean")
+        row["recall_mean"] = wmean("recall_mean")
+        row["decoy_hits_total"] = wsum("decoy_hits_total")
+        row["decoy_hits_mean"] = round(row["decoy_hits_total"] / n, 4) if n else 0.0
+        row["wall_ms_mean"] = int(wsum("wall_ms_mean"))
+        row["tokens_in"] = wsum("tokens_in")
+        row["tokens_out"] = wsum("tokens_out")
+        row["truncated"] = wsum("truncated")
+        row["errors"] = wsum("errors")
+        row["n_ok"] = n
+        merged_out[lv] = row
+        out_name = f"results_pro_merged_L{lv}.json"
+        (ROOT / out_name).write_text(json.dumps({
+            "sample_ids": SAMPLE_IDS, "levels": [lv], "scorer": "v2",
+            "mode": "audit", "model": "deepseek-v4-pro", "repeat": repeat,
+            "merged_from": [parts[i][0] for i in sorted(parts)],
+            "rows": [row],
+        }, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"✅ 刻度 {lv} 合并 {n} 次调用 -> {out_name}  F1={row['f1_mean']:.3f} "
+              f"踩雷={row['decoy_hits_mean']:.2f}")
+    if not merged_out:
+        return 1
+    print("\n现在可以跑：python run_difficulty_analysis.py --compare")
+    return 0
+
+
 if __name__ == "__main__":
-    raise SystemExit(compare_models() if "--compare" in sys.argv[1:] else main())
+    argv = sys.argv[1:]
+    if "--compare" in argv:
+        raise SystemExit(compare_models())
+    if "--merge" in argv:
+        pat = argv[argv.index("--merge") + 1] if len(argv) > argv.index("--merge") + 1 else "results_pro_L*_s?.json"
+        raise SystemExit(merge_split_levels(pat))
+    raise SystemExit(main())
