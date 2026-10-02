@@ -143,7 +143,7 @@ def extract_usage(data: Dict[str, Any]) -> Usage:
 
 class LLMClient:
     def __init__(self, base_url=None, api_key=None, model=None, temperature: float = 0.0,
-                 timeout: int = 120, fake=None, max_tokens: int = DEFAULT_MAX_TOKENS,
+                 timeout: int = 120, fake=None, max_tokens: int | None = None,
                  thinking: str | None = None, strict: bool = False):
         self.base_url = (base_url or os.environ["LLM_BASE_URL"]).rstrip("/")
         self.api_key = api_key or os.environ["LLM_API_KEY"]
@@ -152,9 +152,17 @@ class LLMClient:
         self.timeout = timeout
         # 单次回答的 token 上限。thinking 模型要在 reasoning 上先花掉几百到几千个，
         # 1024 会被吃干导致答案为空（见模块 docstring 里的实踩记录）。
-        self.max_tokens = max_tokens
+        #
+        # ⚠️ 这里必须用 None 哨兵、**在运行时**再读环境变量。
+        # 早前写成 `max_tokens: int = DEFAULT_MAX_TOKENS`（定义时求值），
+        # 导致 `LLMClient(model=...)` 这类直接构造**完全无视 LLM_MAX_TOKENS**，
+        # 只有 from_env() 才认 —— 于是设了 8192 实际仍按 4096 跑，
+        # 难题上 thinking 烧满预算返回空答案，分数悄悄变 0。
+        # 教训：任何"可被环境变量覆盖"的默认值，都不能在函数签名里写死。
+        self.max_tokens = int(max_tokens) if max_tokens else int(
+            os.environ.get("LLM_MAX_TOKENS", DEFAULT_MAX_TOKENS))
         # thinking: None=沿用服务端默认；"on"/"off" 显式开关（DeepSeek 用 {"thinking":{"type":...}}）
-        self.thinking = thinking
+        self.thinking = thinking if thinking is not None else (os.environ.get("LLM_THINKING") or None)
         # strict=True：拿到截断的空答案时直接抛错，而不是悄悄返回空串
         self.strict = strict
         # fake: 可选的 (messages) -> (text, usage_dict) 回调，仅用于离线自测/演示。

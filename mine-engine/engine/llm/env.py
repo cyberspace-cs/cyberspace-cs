@@ -12,6 +12,7 @@
 用法：
     from engine.llm import load_dotenv
     load_dotenv()          # 从仓库根目录找 .env
+    load_dotenv(ROOT)      # 传目录也行，自动补 .env
 """
 
 from __future__ import annotations
@@ -50,9 +51,17 @@ def parse_line(line: str):
 
 
 def load_dotenv(path: str | Path | None = None, override: bool = False) -> int:
-    """把 .env 里的变量写进 os.environ，返回写入条数。文件不存在返回 0。"""
+    """把 .env 里的变量写进 os.environ，返回写入条数。文件不存在返回 0。
+
+    `path` 可以是 .env 文件本身，**也可以是它所在的目录**（目录则自动补 `.env`）。
+    两种都支持是有必要的：脚本里手上通常只有 `ROOT = Path(__file__).parent`，
+    直接传目录最自然，而早期版本只认文件，传目录会因为
+    `Path.exists()` 对目录为真而走到 `read_text()` 抛 PermissionError。
+    """
     p = Path(path) if path else _root() / ".env"
-    if not p.exists():
+    if p.is_dir():
+        p = p / ".env"
+    if not p.is_file():
         return 0
     n = 0
     for line in p.read_text(encoding="utf-8").splitlines():

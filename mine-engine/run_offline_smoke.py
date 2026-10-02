@@ -144,6 +144,52 @@ def main() -> int:
     check("未配单价表时 estimate_cost 返回 None（不假装 0）",
           t.estimate_cost("fake-perfect", 12000, 300) is None)
 
+    # 6. load_dotenv 传目录不能崩（曾把目录当文件读，抛 PermissionError）
+    from engine.llm import load_dotenv
+    probe = ROOT / "results_offline_smoke.env"
+    probe.write_text("SMOKE_ENV_PROBE=ok\n", encoding="utf-8")
+    try:
+        n_dir = load_dotenv(probe.parent / "no_such_dir_marker")  # 不存在的目录 -> 0
+        # 造一个"目录里的 .env"：直接把 probe 当目录不可能，改测文件路径与目录两种入参
+        n_file = load_dotenv(probe)
+        loaded_ok = os.environ.get("SMOKE_ENV_PROBE") == "ok"
+        check("load_dotenv 接受 .env 文件路径", n_file == 1 and loaded_ok,
+              f"n={n_file} value={os.environ.get('SMOKE_ENV_PROBE')!r}")
+        check("load_dotenv 对不存在的路径返回 0（不抛异常）", n_dir == 0, f"n={n_dir}")
+        os.environ.pop("SMOKE_ENV_PROBE", None)
+    finally:
+        probe.unlink(missing_ok=True)
+
+    # 7. max_tokens 必须"运行时"读 LLM_MAX_TOKENS。
+    #    踩过的坑：签名写成 `max_tokens: int = DEFAULT_MAX_TOKENS`（定义时求值），
+    #    于是 LLMClient(model=...) 直接构造时完全无视环境变量，设 8192 仍按 4096 跑，
+    #    难题上 thinking 烧满预算 -> 空答案 -> 分数悄悄变 0。
+    from engine.llm import LLMClient
+    from engine.llm.client import DEFAULT_MAX_TOKENS
+    prev_mt = os.environ.get("LLM_MAX_TOKENS")
+    try:
+        os.environ["LLM_MAX_TOKENS"] = "12345"
+        c_env = LLMClient(base_url="http://x/v1", api_key="k", model="m")
+        check("直接构造 LLMClient 也认 LLM_MAX_TOKENS（不是定义时求值）",
+              c_env.max_tokens == 12345, f"={c_env.max_tokens}")
+        c_expl = LLMClient(base_url="http://x/v1", api_key="k", model="m", max_tokens=777)
+        check("显式传 max_tokens 优先于环境变量", c_expl.max_tokens == 777,
+              f"={c_expl.max_tokens}")
+        os.environ["LLM_THINKING"] = "off"
+        check("直接构造也认 LLM_THINKING", LLMClient(
+            base_url="http://x/v1", api_key="k", model="m").thinking == "off")
+        del os.environ["LLM_THINKING"]
+        os.environ.pop("LLM_MAX_TOKENS", None)
+        c_def = LLMClient(base_url="http://x/v1", api_key="k", model="m")
+        check("没设环境变量时回落到 DEFAULT_MAX_TOKENS",
+              c_def.max_tokens == DEFAULT_MAX_TOKENS, f"={c_def.max_tokens}")
+    finally:
+        if prev_mt is None:
+            os.environ.pop("LLM_MAX_TOKENS", None)
+        else:
+            os.environ["LLM_MAX_TOKENS"] = prev_mt
+        os.environ.pop("LLM_THINKING", None)
+
     print("\n" + "=" * 78)
     failed = [n for n, ok, _ in checks if not ok]
     if failed:

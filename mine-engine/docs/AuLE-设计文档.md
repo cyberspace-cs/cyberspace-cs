@@ -98,6 +98,12 @@ Pipeline → Operator → Prompt：
 
 ### 5.1 Detect 模式（Level 1）
 4 模型 × 7 题：3 个模型 F1=1.000，qwen3.8-max F1=0.857（变体题误报 2 处）。
+
+> ⚠️ **这是早期 baseline（DashScope 网关 + v1 判分器 + 仅 4 道独立题），已被真实跑测刷新**：
+> [`12-真实模型接入与踩坑记.md`](./12-真实模型接入与踩坑记.md) 用 DeepSeek 官方网关 + v2 判分器
+> 跑同一批 7 样本，`deepseek-flash` F1=**0.730**、`deepseek-v4-pro`=**0.871**。
+> **"Level 1 已饱和"这个结论只在早期小样本下成立，真实跑测显示仍有区分度空间。**
+
 **结论：Level 1 区分度不足，教科书题被 SOTA 秒解。**
 
 ### 5.2 AI Filter 结果

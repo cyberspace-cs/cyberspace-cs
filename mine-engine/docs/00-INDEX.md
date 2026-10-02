@@ -26,7 +26,8 @@
 | **09** | [**合成数据与环境工程：三坐标校准手册**](./09-synthetic-env-playbook.md) ⭐ | **先读这篇** | 用 **ALE / ALE-Bench / Harbor** 三个坐标重新梳理全盘：怎么造环境、怎么封装、怎么判分、怎么让分数不封顶 |
 | **10** | [**行动方案（草稿 · 待审核）**](./10-action-plan.md) 📌 | **拍板的人** | 零基础可读，全程用一个真实例子讲到底；四步走 + 6 个待决策点 |
 | **11** | [**这个领域的基础（从零讲起）**](./11-fundamentals.md) 🌱 | **零基础的人** | **先看这篇**。用"一场考试"讲清 Agent/环境/benchmark/harness，<br>收录 CSDN 与小红书的四种讲法，再讲 ALE / ALE-Bench / Harbor 三件事，<br>最后逐块对照"这些基础如何拼成 AuLE" |
-| **12** | [**真实模型接入与踩坑记**](./12-真实模型接入与踩坑记.md) 🔌 | **要真跑的人** | 三组 key 实测结论、模型名静默换名、thinking 截断陷阱、真实 benchmark 数据、单价来源 |
+| **12** | [**真实模型接入与踩坑记**](./12-真实模型接入与踩坑记.md) 🔌 | **要真跑的人** | 三组 key 实测结论、模型名静默换名、thinking 截断陷阱、真实 benchmark 数据、单价来源、<br>**第 7 节：难度旋钮实跑暴露的 4 个"看似生效实则失效"的坑** |
+| **13** | [**难度旋钮验收报告**](./13-难度旋钮验收.md) 📈 | **要写论文的人** | 第四步的真实验收数据：难度刻度 → F1 / 误报率 / 耗时 / 成本曲线，<br>三条验收（分离 / 稳定 / 单调）逐条给结论 |
 | — | [可视化报告 report.html](./report.html) | 所有人 | 一页看懂：痛点 / 脉络 / 定位 / 赛道 / idea / 路线图 |
 
 > 🌱 **完全没基础？从 [11](./11-fundamentals.md) 开始**。
@@ -79,12 +80,13 @@
 | 跨赛道 | 🔨 三条赛道契约已定义，实现待做 |
 | **环境四维体检** | ✅ 本次新增（`run_env_quality.py`） |
 | **时间/成本双轴 + 饱和检测** | ✅ 本次新增（`engine/analytics/openended.py`） |
-| 难度连续旋钮 | ✅ 已实现（`engine/operators/difficulty.py` + `run_difficulty_sweep.py`）；<br>离线结构指标已验证单调（诱饵/伪装/跨函数随刻度↑），F1 曲线需配 LLM（I11，我们独有的牌） |
+| 难度连续旋钮 | ✅ 已实现**并通过真实验收**（`engine/operators/difficulty.py` + `run_difficulty_sweep.py`）；<br>真实 deepseek-flash 扫描：F1 随刻度下降、误报率随刻度上升（[doc 13](./13-难度旋钮验收.md)）<br>（I11，我们独有的牌） |
+| **旋钮静态体检** | ✅ 本次新增（`run_difficulty_lint.py`）：括号配平 / 依赖符号已声明 / 无重名函数 / 无自曝身份；<br>18 项全过，**当场抓出 2 个会让整批样本编译失败的 bug** |
 | **时间与成本记账** | ✅ 已落地（`run_benchmark.py` + `engine/llm/pricing.py`）；<br>口径为 **cost per solved task**；单价需自行配置，未配置显示 n/a |
 | **防伪检查（dummy / oracle check）** | ✅ 已落地（`run_dummy_check.py`）；7 样本在 v1/v2 下全通过；<br>并揪出 v2 判分器的诱饵题 bug（已修） |
 | **自我修正循环（题坏了喂回修）** | 🔨 骨架已实现（`batch_generate.py` 重试循环 + `VariationOperator.fix_variant`）；<br>把 forge 报错喂回 LLM 重生成，记录 retry_count；forge 实跑留 CI |
 | **真实端到端跑通** | ✅ 已接真实 DeepSeek key 跑通 7 样本（v2，repeat=1）：<br>flash F1=0.730 / $0.0037 / 5-7s；pro F1=0.871 / $0.0456 / 6-7s。<br>⚠️ repeat=1 不显著；详见 [12](./12-真实模型接入与踩坑记.md) |
-| 离线自测 | ✅ 已落地（`run_offline_smoke.py`，13 项断言，无需 API key） |
+| 离线自测 | ✅ 已落地（`run_offline_smoke.py`，**19 项**断言）、`run_implementation_smoke.py`（旋钮+自我修正），均无需 API key |
 
 ### 我们在学术分类里的位置（写论文必用）
 

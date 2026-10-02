@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -80,7 +81,10 @@ def test_difficulty_knob() -> None:
     for level in range(0, 6):
         knob = PRESETS[level]
         out, metrics = apply_difficulty(base, knob)
-        _assert("decoy" in out or metrics["decoy_count"] == 0, f"刻度{level} 变换未抛异常")
+        # 变换要真的生效：诱饵函数名出现在产物里
+        if metrics["decoy_count"]:
+            _assert(all(fn in out for fn in metrics["decoy_functions"]),
+                    f"刻度{level} 诱饵函数确实插入到源码里")
         _assert(metrics["decoy_count"] >= prev_decoys,
                 f"刻度{level} 诱饵数({metrics['decoy_count']}) >= 上一档({prev_decoys}) [单调]")
         prev_decoys = metrics["decoy_count"]
@@ -93,6 +97,42 @@ def test_difficulty_knob() -> None:
     # 跨函数变换应把 withdraw 包进 helper
     out5, _ = apply_difficulty(base, PRESETS[5])
     _assert("_checkWithdraw" in out5, "跨函数变换生成了内部 helper _checkWithdraw")
+
+    # ---- 两条硬规则（都是实跑踩出来的）----
+    # 规则1：诱饵绝不能自曝身份。函数名/注释里出现 decoy/safe 之类词就等于告诉模型
+    #        "这段是示意代码"，模型直接跳过，难度旋钮退化成"只加长度不加难度"。
+    out_d, _ = apply_difficulty(base, PRESETS[5])
+    low = out_d.lower()
+    leaked = [w for w in ("decoy", "[decoy]", "looks risky", "already guarded",
+                          "but is checked", "owner-gated") if w in low]
+    _assert(not leaked, f"诱饵不得自曝身份（发现泄漏词: {leaked}）")
+
+    # 规则2：插入的诱饵必须能编译 —— 依赖的状态/修饰符要先补齐。
+    out_c, _ = apply_difficulty(base, PRESETS[4])
+    for sym in ("partnerShare", "onlyOwner", "operator", "riskCap"):
+        if sym in out_c:
+            _assert(out_c.count(sym) >= 2 or sym in ("onlyOwner",),
+                    f"{sym} 既被使用也应有声明")
+    _assert("modifier onlyOwner()" in out_c or "onlyOwner" not in out_c,
+            "用到 onlyOwner 就必须补上 modifier 定义")
+    _assert("mapping(address => uint256) internal partnerShare;" in out_c,
+            "缺失的状态变量声明已自动补齐")
+    # 幂等：再插一次不应重复声明
+    twice, _ = apply_difficulty(out_c, PRESETS[4])
+    _assert(twice.count("internal partnerShare;") == 1, "状态声明注入是幂等的")
+
+    # 规则3：诱饵函数名必须唯一。模板只有 4 条而刻度 5 要插 6 个，
+    #       直接循环复用会产出同名函数重复定义 —— Solidity 编译错误，整批样本全废。
+    fns5 = m5["decoy_functions"]
+    _assert(len(fns5) == len(set(fns5)), f"刻度5 诱饵函数名不重复: {fns5}")
+    _assert(len(fns5) == 6, f"刻度5 应规划 6 个诱饵，实际 {len(fns5)}")
+    defined = re.findall(r"\bfunction\s+(\w+)\s*\(", out_d)
+    dups = {x for x in defined if defined.count(x) > 1}
+    _assert(not dups, f"插入后无重名函数（发现 {dups}）")
+    # 依赖声明也要去重：多个诱饵可能都依赖 partnerShare
+    _assert(out_d.count("internal partnerShare;") == 1,
+            f"依赖声明去重（实际出现 {out_d.count('internal partnerShare;')} 次）")
+
 
 
 def test_self_correction() -> None:

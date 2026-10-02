@@ -111,6 +111,12 @@ py run_benchmark.py
 
 **baseline 实测（7 样本：3 雷×{原题,LLM变体} + 1 诱饵，DashScope 网关，standard prompt）**：
 
+> ⚠️ **本表是早期 baseline（DashScope 网关 + v1 判分器），已被真实跑测刷新**：
+> [`docs/12`](./docs/12-真实模型接入与踩坑记.md) 用 DeepSeek 官方网关 + v2 判分器跑同一批样本，
+> `deepseek-flash` 真实 F1=**0.730**、`deepseek-v4-pro`=**0.871**。
+> 表里的 1.000 是**样本小 + 网关/判分器差异**造成的饱和假象，**对外请以 doc 12 为准**。
+> 另注：`deepseek-v4-flash` 在 DeepSeek 官方网关会被**静默改名**为 `deepseek-flash`（不报错）。
+
 | model | TP | FP | FN | Recall | Precision | F1 |
 |---|---|---|---|---|---|---|
 | qwen3.8-flash | 6 | 0 | 0 | 1.000 | 1.000 | 1.000 |
