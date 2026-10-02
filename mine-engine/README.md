@@ -275,12 +275,36 @@ py run_dummy_check.py --json         # 机器可读
 
 当前 7 个样本全部通过（v1 / v2 两个判分器都已验证）。
 
+### 难度连续旋钮（M7+ · 行动方案第四步，我们独有的牌）
+
+同一道题旋钮从刻度 0 转到 5，得到 6 道难度不同的题——**分数连续可调，这正是
+ALE（三档离散）和 ALE-Bench（题目自带、不可调）都没有的**。
+
+```shell
+# 离线：只看"题目长相"是否真的变了（诱饵/伪装/跨函数随刻度单调增加）
+py run_difficulty_sweep.py
+
+# 静态体检：插进去的代码能不能编译（本机无 forge 时的护栏）
+py run_difficulty_lint.py       # 括号配平 / 依赖符号已声明 / 无重名函数 / 无自曝身份
+
+# 真跑：出"难度刻度 → F1 / 误报率 / 耗时 / 成本"曲线（会花钱）
+py run_difficulty_sweep.py --audit --repeat 3 \
+   --samples sample-0001,sample-0002,sample-0003 --model deepseek-flash
+```
+
+> ⚠️ **写"伪装类"算子的头号陷阱：诱饵不能自曝身份。**
+> 最初诱饵函数叫 `decoyPayout`、注释写着 `[decoy] looks risky but...`，
+> 模型读到注释就知道这段无害、直接跳过，**难度旋钮退化成"只加长度不加难度"，F1 反而上升**。
+> 真实工程里攻击者不会给代码写批注说明自己无害。详见 [doc 12 第 7 节](./docs/12-真实模型接入与踩坑记.md)。
+
 ### 离线自测（不需要 API key）
 
 本机没有密钥时，用假 LLM 也能验证记账链路是否正确：
 
 ```shell
-py run_offline_smoke.py     # 13 项断言，全通过则退出码 0
+py run_offline_smoke.py          # 19 项断言（记账/截断判定/env 加载/定价）
+py run_implementation_smoke.py   # 旋钮三条硬规则 + 自我修正循环收敛
+py run_difficulty_lint.py        # 18 项静态体检
 ```
 
 ### 三条赛道（四组件领域无关，换 adapter 即可）

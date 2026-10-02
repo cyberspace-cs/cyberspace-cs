@@ -134,12 +134,36 @@ def main() -> None:
     print("-" * 92)
 
     rows = []
+    out_path = ROOT / args.out
+
+    def dump(rows_so_far, done: bool) -> None:
+        """逐档落盘。
+
+        一轮完整扫描 54 次调用、耗时 10 分钟以上，中途被工具超时/网络打断是常事。
+        早期版本只在**全部跑完**后写文件，一中断就丢掉已完成的档数（得重跑十几分钟）。
+        现在每跑完一档就写一次：中断时前几档的数据仍然可用（`partial: true` 标记）。
+        """
+        payload = {
+            "sample_ids": sample_ids,
+            "levels": levels,
+            "scorer": args.scorer,
+            "mode": "audit" if args.audit else "offline",
+            "model": client.model if client else None,
+            "repeat": args.repeat,
+            "completed_levels": [r["level"] for r in rows_so_far],
+            "partial": not done,
+            "rows": rows_so_far,
+        }
+        out_path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
     for level in levels:
         knob = PRESETS[level]
         per_level = {"f1": [], "precision": [], "recall": [], "decoy": [], "wall": []}
         structure = None
         t_in = t_out = 0
         m_trunc = 0
+        m_err = 0
 
         for sid, (planted_source, meta) in loaded.items():
             new_src, metrics = apply_difficulty(planted_source, knob)
@@ -148,7 +172,16 @@ def main() -> None:
             if not args.audit:
                 break
             for _ in range(max(1, args.repeat)):
-                sc = run_audit(new_src, meta, score_fn, client, agent, decoy_fns)
+                # 单次调用失败（网络/限流/网关 5xx）不该让整轮扫描作废：
+                # 难度扫描一次要几十次调用，越到高刻度越慢越容易中途挂掉。
+                # 这里记为失败并继续，最后在结果里如实报告失败次数。
+                try:
+                    sc = run_audit(new_src, meta, score_fn, client, agent, decoy_fns)
+                except Exception as e:  # noqa: BLE001
+                    m_err += 1
+                    print(f"     [!] {sid} 刻度{level} 第{_ + 1}次调用失败："
+                          f"{type(e).__name__}: {str(e)[:120]}")
+                    continue
                 per_level["f1"].append(sc["f1"])
                 per_level["precision"].append(sc.get("precision", 0.0))
                 per_level["recall"].append(sc.get("recall", 0.0))
@@ -176,7 +209,8 @@ def main() -> None:
         if metrics.get("cross_function"):
             note.append("跨函数")
         if knob.variation_k:
-            note.append(f"改写x{knob.variation_k}")
+            note.append(f"改写x{knob.variation_k}" if metrics.get("variation_applied")
+                        else f"改写x{knob.variation_k}(未接线)")
 
         print(f"{level:<4} {metrics.get('decoy_count', 0):<4} "
               f"{('Y' if metrics.get('obfuscated') else '-'):<5} "
@@ -200,29 +234,31 @@ def main() -> None:
             "wall_ms_mean": int(statistics.fmean(per_level["wall"])) if per_level["wall"] else None,
             "tokens_in": t_in, "tokens_out": t_out, "cost_usd": cost,
             "truncated": m_trunc,
+            "errors": m_err,
+            "n_ok": len(per_level["f1"]),
         })
         if m_trunc:
             print(f"     ⚠️  本档 {m_trunc} 次疑似截断（空答案），F1 会被低估，建议调大 LLM_MAX_TOKENS")
+        if m_err:
+            print(f"     ⚠️  本档 {m_err} 次调用失败（网络/限流），已跳过；"
+                  f"有效样本 {len(per_level['f1'])}/{len(loaded) * max(1, args.repeat)}")
+        # 每跑完一档就落盘：中途被超时打断时，已完成档数的数据仍然可用
+        dump(rows, done=False)
 
-    payload = {
-        "sample_ids": sample_ids,
-        "levels": levels,
-        "scorer": args.scorer,
-        "mode": "audit" if args.audit else "offline",
-        "model": client.model if client else None,
-        "repeat": args.repeat,
-        "rows": rows,
-    }
-    with (ROOT / args.out).open("w", encoding="utf-8") as fh:
-        json.dump(payload, fh, ensure_ascii=False, indent=2)
+    dump(rows, done=True)
 
     print("-" * 92)
     if args.audit and rows:
         total_cost = sum(r["cost_usd"] or 0.0 for r in rows)
         tot_in = sum(r["tokens_in"] for r in rows)
         tot_out = sum(r["tokens_out"] for r in rows)
+        tot_err = sum(r.get("errors", 0) for r in rows)
+        tot_trunc = sum(r.get("truncated", 0) for r in rows)
         cost_s = f"${total_cost:.4f}" if prices.configured else "n/a(未配单价)"
         print(f"合计 token: {tot_in + tot_out}  成本: {cost_s}  结果: {args.out}")
+        if tot_err or tot_trunc:
+            print(f"⚠️  全程失败 {tot_err} 次 / 疑似截断 {tot_trunc} 次 —— "
+                  f"这两类样本没进统计（失败不计、截断记 0 会低估 F1）")
         f1s = [r["f1_mean"] for r in rows if r["f1_mean"] is not None]
         if len(f1s) >= 2:
             delta = f1s[0] - f1s[-1]
@@ -232,6 +268,10 @@ def main() -> None:
         dh = [r["decoy_hits_mean"] for r in rows if r["decoy_hits_mean"] is not None]
         if len(dh) >= 2:
             print(f"踩诱饵均值: {dh[0]:.2f} -> {dh[-1]:.2f}（越高说明模型越'宁可错报'，难度越高）")
+        walls = [r["wall_ms_mean"] for r in rows if r["wall_ms_mean"]]
+        if len(walls) >= 2:
+            print(f"单次耗时: {walls[0] / 1000:.1f}s -> {walls[-1] / 1000:.1f}s"
+                  f"（×{walls[-1] / max(1, walls[0]):.1f}）")
         if args.repeat < 3:
             print("⚠️  repeat<3：单次采样带随机性，'稳定'这条验收没做。正式结论请 --repeat 3 以上。")
     else:

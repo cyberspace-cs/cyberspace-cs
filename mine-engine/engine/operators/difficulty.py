@@ -112,7 +112,11 @@ class DifficultyKnob:
     decoy_count: int = 0         # 诱饵密度：插入几条"看着像漏洞其实没问题"的代码
     obfuscate: bool = False      # 代码伪装：局部变量改名
     cross_function: bool = False # 藏多深：把漏洞函数体包进内部 helper
-    variation_k: int = 0         # 改写强度：交给 VariationOperator 做语义保持改写（需 LLM）
+    # ⚠️ 改写强度：**目前只是名义值，apply_difficulty 并不会真的调用 LLM 改写。**
+    #    它需要 VariationOperator（要配 API key、每次几秒到几十秒），属于离线旋钮之外的
+    #    另一档开销，所以扫描表里刻度 2..5 显示的"改写x1/x2/x3"目前**不代表实际难度增量**。
+    #    接线方式见 apply_difficulty 的注释。诚实起见先不假装它生效。
+    variation_k: int = 0
 
     def as_dict(self) -> Dict[str, object]:
         return {
@@ -282,5 +286,13 @@ def apply_difficulty(planted_source: str, knob: DifficultyKnob):
             metrics["cross_function"] = True
         except Exception:
             pass
+
+    # ⚠️ variation_k 故意不执行：它要真调 LLM（VariationOperator），是"离线旋钮"之外的
+    #    另一档开销（每题几秒到几十秒 + 花钱）。这里如实标 false，扫描表会显示
+    #    "改写未接线"而不是假装难度已经上去了。
+    #    要接线时：把 client/variation_operator 传进来，调
+    #    `VariationOperator(client, k=knob.variation_k).run([{...'planted_source': out...}])`，
+    #    并**把改写后的源码作为新输入**（不能只记个数）。
+    metrics["variation_applied"] = False
 
     return out, metrics
