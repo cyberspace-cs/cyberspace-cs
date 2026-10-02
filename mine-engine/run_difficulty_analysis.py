@@ -142,9 +142,11 @@ def compare_models() -> int:
     """
     import glob
     flash = collect(sorted(glob.glob(str(ROOT / "results_diff_*.json"))))
-    # pro 的来源：合并后的完整档位 + 整档跑完的 L1/L2（排除 A 的残档与分样本碎片）
+    # pro 的来源：合并后的完整档位 + 整档跑完的 L1/L2 + A批次里的刻度0
+    # （A 批次在刻度 1 处被超时打断，但刻度 0 是完整落盘的，那一行有效）
     pro = collect(sorted(glob.glob(str(ROOT / "results_pro_merged_*.json")))
-                  + sorted(glob.glob(str(ROOT / "results_pro_L[12].json"))))
+                  + sorted(glob.glob(str(ROOT / "results_pro_L[12].json")))
+                  + [str(ROOT / "results_pro_A.json")])
     if not flash or not pro:
         print("需要两组结果：results_diff_*.json（flash）与 results_pro_[AB].json（v4-pro）")
         print(f"  现状: flash={sorted(flash)} pro={sorted(pro)}")
@@ -198,6 +200,16 @@ def compare_models() -> int:
           f"（1=同形；<0.9 视为形状不同 → 难度对不同模型作用不同）")
     print(f"最大逐档差距 {max(abs(d) for d in diffs):.3f} 出现在刻度 "
           f"{common[diffs.index(max(diffs, key=abs))]}")
+
+    # 交叉点比相关系数更有说服力：曲线在某个刻度真的穿过去了，
+    # 说明同一道题在不同模型眼里的难度排序是反的。
+    crossings = [common[i] for i in range(len(diffs) - 1)
+                 if diffs[i] > 0 and diffs[i + 1] <= 0]
+    if crossings:
+        print(f"⚡ 曲线在刻度 {crossings} 发生交叉："
+              f"该刻度之前 pro 领先，之后 pro 落后")
+    else:
+        print(f"（无交叉：pro 在所有共同刻度上{'始终领先' if min(diffs) > 0 else '始终落后'}）")
 
     print("\n判读：")
     if rho < 0.9:
@@ -295,7 +307,12 @@ def merge_split_levels(pattern: str) -> int:
         row["recall_mean"] = wmean("recall_mean")
         row["decoy_hits_total"] = wsum("decoy_hits_total")
         row["decoy_hits_mean"] = round(row["decoy_hits_total"] / n, 4) if n else 0.0
-        row["wall_ms_mean"] = int(wsum("wall_ms_mean"))
+        # 均值类字段取样本均值的平均（各样本 repeat 相同，等价于总体均值），
+        # **不能求和** —— 否则 3 个样本会变成 3 倍值。
+        # （曾把wall_ms_mean 写成 wsum，刻度3 因此显示 204s 而实际约 70s）
+        row["wall_ms_mean"] = int(round(wmean("wall_ms_mean") or 0))
+        # 成本是"这一档总共花了多少钱"，必须求和
+        row["cost_usd"] = round(wsum("cost_usd"), 6)
         row["tokens_in"] = wsum("tokens_in")
         row["tokens_out"] = wsum("tokens_out")
         row["truncated"] = wsum("truncated")

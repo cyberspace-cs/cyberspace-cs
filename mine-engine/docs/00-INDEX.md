@@ -80,8 +80,8 @@
 | 跨赛道 | 🔨 三条赛道契约已定义，实现待做 |
 | **环境四维体检** | ✅ 本次新增（`run_env_quality.py`） |
 | **时间/成本双轴 + 饱和检测** | ✅ 本次新增（`engine/analytics/openended.py`） |
-| 难度连续旋钮 | ✅ 已实现**并跑过真实验收**（`engine/operators/difficulty.py` + `run_difficulty_sweep.py`）；<br>deepseek-flash 3 样本×6 档：踩雷率 0.00→**0.67**、耗时 ×17、端点 F1 0.775→0.649（[doc 13](./13-难度旋钮验收.md)）。<br>⚠️ 两个已知边界：**对已饱和的题无效**（甚至反向）；4 个旋钮里 `variation_k` 未接线 |
-| **旋钮静态体检** | ✅ 本次新增（`run_difficulty_lint.py`）：括号配平 / 依赖符号已声明 / 无重名函数 / 无自曝身份；<br>18 项全过，**当场抓出 2 个会让整批样本编译失败的 bug** |
+| 难度连续旋钮 | ✅ 已实现**并跑过真实验收**（`engine/operators/difficulty.py` + `run_difficulty_sweep.py`）；<br>两个模型 × 3 样本 × 6 档 = **108 次真实调用**（$1.51）：<br>· 踩雷率 0.00→**0.67**、耗时 **×17**、端点 F1 0.775→0.649<br>· **两条曲线在刻度 2 交叉**——flash 与 v4-pro 的难度排序反过来<br>（[doc 13](./13-难度旋钮验收.md)）<br>⚠️ 三个已知边界：**对已饱和的题无效**（甚至反向）；4 个旋钮里 `variation_k` 未接线；只测了同厂两个模型 |
+| **旋钮静态体检** | ✅ `run_difficulty_lint.py`：括号配平 / 依赖符号已声明 / 无重名函数 / 无自曝身份；<br>18 项全过，**当场抓出 2 个会让整批样本编译失败的 bug** |
 | **时间与成本记账** | ✅ 已落地（`run_benchmark.py` + `engine/llm/pricing.py`）；<br>口径为 **cost per solved task**；单价需自行配置，未配置显示 n/a |
 | **防伪检查（dummy / oracle check）** | ✅ 已落地（`run_dummy_check.py`）；7 样本在 v1/v2 下全通过；<br>并揪出 v2 判分器的诱饵题 bug（已修） |
 | **自我修正循环（题坏了喂回修）** | 🔨 骨架已实现（`batch_generate.py` 重试循环 + `VariationOperator.fix_variant`）；<br>把 forge 报错喂回 LLM 重生成，记录 retry_count；forge 实跑留 CI |
