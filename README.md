@@ -120,6 +120,7 @@
 | [**hot-open-source**](https://github.com/cyberspace-cs/hot-open-source) | GitHub 热门开源项目 TOP 10 整理（带 GitHub 链接） |
 | [**adventurex-2026**](https://github.com/cyberspace-cs/adventurex-2026) | AdventureX 2026 获奖项目学习指南：6 个官方画廊项目拆解 |
 | [**contest-tracker**](https://github.com/cyberspace-cs/contest-tracker) | 比赛雷达：Kaggle/Codeforces/ICPC/NOI/黑客松 实时追踪 |
+| [**leetcode**](https://github.com/cyberspace-cs/leetcode) | LeetCode HOT100 题解 + 秋招算法学习仓库整理（11 模块 114 篇 Notebook） |
 | [**advx2026-hackathon**](https://github.com/cyberspace-cs/advx2026-hackathon) | 💄 欧莱雅美妆科技黑客松：三大赛题开源模块汇总 + 远程跟妆助手方案 |
 
 ### 🛠️ 自研应用
@@ -142,6 +143,7 @@
 | [**portainer**](https://github.com/cyberspace-cs/portainer) | Docker 可视化管理 |
 | [**supabase**](https://github.com/cyberspace-cs/supabase) | 开源 Firebase 替代 |
 | [**LumaRing**](https://github.com/cyberspace-cs/LumaRing) | 🔘 macOS 轮盘快速切换器：2.9MB 原生 Swift，切应用/窗口/浏览器标签 + App 快捷键（含中文说明） |
+| [**build-your-own-x**](https://github.com/cyberspace-cs/build-your-own-x) | 🏆 GitHub 全球 star 第一（551K⭐）：从零复刻 30 个技术方向（OS/数据库/Docker/Git/浏览器...），纯教程清单零代码（含中文说明） |
 
 ---
 

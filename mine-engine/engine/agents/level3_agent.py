@@ -26,7 +26,10 @@ _PROMPT = """你是资深 Solidity 安全审计专家。给定一个智能合约
    - line: 大致行号
    - severity: critical / high / medium / low
    - evidence: 一句话依据
-   - poc: 简要说明如何利用（一两句话）
+   - poc: 完整的 Foundry 测试代码（.t.sol 文件内容），能编译并跑通证明漏洞存在。
+          必须包含：import forge/Test.sol、import 被测合约、contract Test { ... }、
+          一个 test_xxx() 函数里用 vm.prank / vm.deal 等 cheatcode 复现攻击，
+          最后用 assert 断言攻击成功（如余额变化）。
 
 严格只输出一个 JSON 对象，不要 markdown 代码块、不要任何解释文字：
 {"findings":[{...}]}
@@ -52,8 +55,8 @@ class Level3AuditAgent:
     def __init__(self, client: LLMClient):
         self.client = client
 
-    def audit_repo(self, files: dict[str, str]) -> dict:
-        """files: {文件名: 源码}"""
+    def audit_repo_raw(self, files: dict[str, str]) -> str:
+        """返回模型原始输出（不解析 JSON，交给 gate 处理）。"""
         code_block = "\n\n".join(
             f"// ===== FILE: {name} =====\n{src}" for name, src in files.items()
         )
@@ -67,7 +70,11 @@ class Level3AuditAgent:
                 ),
             },
         ]
-        raw = self.client.chat(messages, max_tokens=2048)
+        return self.client.chat(messages, max_tokens=4096)
+
+    def audit_repo(self, files: dict[str, str]) -> dict:
+        """files: {文件名: 源码}"""
+        raw = self.audit_repo_raw(files)
         report = _extract_json(raw)
         findings = report.get("findings", [])
         if not isinstance(findings, list):
