@@ -1,10 +1,10 @@
 """第四步验证脚本：扫描难度刻度 0..5，产出"难度 -> 结构指标 / AI 分数"曲线。
 
 两种模式：
-  * 默认（离线）：只输出结构指标（诱饵数、是否伪装、是否跨函数），
+  * 默认（离线）：只输出结构指标（chaff数、是否伪装、是否跨函数），
     证明旋钮确实改变了题目的"长相"，不花钱。
-  * `--audit`：真调 LLM 审计，算 F1 / 精确率，并**统计是否踩到诱饵**
-    （decoy_hits）。诱饵是"看着像漏洞但其实安全"的代码：
+  * `--audit`：真调 LLM 审计，算 F1 / 精确率，并**统计是否踩到chaff**
+    （decoy_hits）。chaff 是"看着像漏洞但其实安全"的代码：
     模型报了就说明它"宁可错报"，难度确实上去了；不报说明它有判别力。
 
 用法：
@@ -15,7 +15,7 @@
 验收（见 docs/10-action-plan.md 3.4）三条：
   1. 分离：刻度↑时 F1 总体下降、decoy_hits 总体上升（题确实变难）；
   2. 稳定：同一刻度多次采样的方差可控，不是纯噪声；
-  3. 结构：诱饵/伪装/跨函数标志单调增加（离线即可验证）。
+  3. 结构：chaff/伪装/跨函数标志单调增加（离线即可验证）。
 """
 
 from __future__ import annotations
@@ -45,15 +45,15 @@ def load_sample(ds: Path, sample_id: str):
 
 
 def count_decoy_hits(findings: list, decoy_fns: list) -> int:
-    """模型报告里有多少条命中了我们插进去的诱饵函数。
+    """模型报告里有多少条命中了我们插进去的chaff 函数。
 
     匹配的是**函数名**（payoutPartner / accrueTier / setRiskCap / maintenanceMode），
-    不是源码里的 "decoy" 字样 —— 诱饵代码里刻意不出现这个词（自曝身份就失效了），
+    不是源码里的 "decoy" 字样 —— chaff代码里刻意不出现这个词（自曝身份就失效了），
     所以只能按函数名匹配。函数名取自 apply_difficulty 返回的 metrics，
-    保证与实际插入的完全一致（诱饵模板会循环复用，>4 条时同名函数会重复出现，
+    保证与实际插入的完全一致（chaff模板会循环复用，>4 条时同名函数会重复出现，
     这本身也是刻度 5 的一部分难度）。
 
-    判分器不认诱饵（gt 里没有），踩雷只会间接体现为 precision 下降；
+    判分器不认chaff（gt 里没有），误报只会间接体现为 precision 下降；
     这里直接数一次，得到不依赖判分器口径的硬指标。
     """
     if not decoy_fns:
@@ -67,7 +67,7 @@ def count_decoy_hits(findings: list, decoy_fns: list) -> int:
 
 
 def run_audit(planted_source: str, meta: dict, score_fn, client, agent, decoy_fns):
-    """跑一次审计，返回 (分数, 踩雷数, 用量)。调用方保证 client/agent 已就绪。"""
+    """跑一次审计，返回 (分数, 误报数, 用量)。调用方保证 client/agent 已就绪。"""
     report = agent.audit(planted_source)
     findings = report.get("findings", [])
     sc = score_fn(meta.get("issues", []), findings)
@@ -129,8 +129,8 @@ def main() -> None:
     print("=" * 92)
     print(f"难度扫描 · 刻度 {levels} · 判分器 {args.scorer} · 模式 {'audit' if args.audit else 'offline'}")
     print("=" * 92)
-    print(f"{'刻度':<4} {'诱饵':<4} {'伪装':<5} {'跨函数':<6} {'F1':<13} {'Prec':<13} "
-          f"{'踩雷':<8} {'ms':<7} 说明")
+    print(f"{'刻度':<4} {'chaff':<4} {'伪装':<5} {'跨函数':<6} {'F1':<13} {'Prec':<13} "
+          f"{'误报':<8} {'ms':<7} 说明")
     print("-" * 92)
 
     rows = []
@@ -203,7 +203,7 @@ def main() -> None:
         metrics = structure or {"decoy_count": 0, "obfuscated": False, "cross_function": False}
         note = []
         if metrics.get("decoy_count"):
-            note.append(f"+{metrics['decoy_count']}诱饵")
+            note.append(f"+{metrics['decoy_count']}chaff")
         if metrics.get("obfuscated"):
             note.append("伪装")
         if metrics.get("cross_function"):
@@ -267,7 +267,7 @@ def main() -> None:
                   f"Δ={delta:+.3f} → {trend}")
         dh = [r["decoy_hits_mean"] for r in rows if r["decoy_hits_mean"] is not None]
         if len(dh) >= 2:
-            print(f"踩诱饵均值: {dh[0]:.2f} -> {dh[-1]:.2f}（越高说明模型越'宁可错报'，难度越高）")
+            print(f"踩chaff均值: {dh[0]:.2f} -> {dh[-1]:.2f}（越高说明模型越'宁可错报'，难度越高）")
         walls = [r["wall_ms_mean"] for r in rows if r["wall_ms_mean"]]
         if len(walls) >= 2:
             print(f"单次耗时: {walls[0] / 1000:.1f}s -> {walls[-1] / 1000:.1f}s"
@@ -276,7 +276,7 @@ def main() -> None:
             print("⚠️  repeat<3：单次采样带随机性，'稳定'这条验收没做。正式结论请 --repeat 3 以上。")
     else:
         print(f"结果已落盘 {args.out}（F1 为 n/a = 未配 LLM，仅结构指标）")
-    print("验收三条：① F1 随刻度下降且踩雷上升（分离）② 同档多次采样方差可控（稳定）"
+    print("验收三条：① F1 随刻度下降且误报上升（分离）② 同档多次采样方差可控（稳定）"
           "③ 结构标志单调增加（结构，本次已验）")
 
 

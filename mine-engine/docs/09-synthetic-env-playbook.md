@@ -31,12 +31,12 @@
 ### 一句话串起来
 
 ```
-AWM   造环境  →  Harbor 打包成三元组  →  ALE 定判分纪律  →  ALE-Bench 定分数形态
-(怎么生题)       (怎么交付)              (怎么判才不作弊)    (怎么判才不封顶)
+AWM 造环境 → Harbor 打包成三元组 → ALE 定判分纪律 → ALE-Bench 定分数形态
+(怎么生题) (怎么交付) (怎么判才不作弊) (怎么判才不封顶)
 ```
 
 **我们 AuLE 的位置**：四层我们都有对应物，但成熟度差很远——
-- 造环境：✅ 四组件（埋雷/变体/验证/判分）已跑通，缺**自我修正循环**和**多样性度量**
+- 造环境：✅ 四组件（注入漏洞/变体/验证/判分）已跑通，缺**自我修正循环**和**多样性度量**
 - 打包：✅ `run_harbor_export.py` 已能导出三元组，缺 **oracle/dummy 双跑**
 - 判分纪律：🔨 ALE 的 gate-and-score 只做了一半（Gate 2「PoC 真跑」还没接进 Level 3）
 - 分数形态：❌ **最大的空白**——我们还是二值/准二值（pass@1、F1 匹配），ALE-Bench 的连续分 + 开放式上限我们**完全没做**
@@ -66,11 +66,11 @@ AWM   造环境  →  Harbor 打包成三元组  →  ALE 定判分纪律  →  
 ### 1.2 Gate-and-score：先卡资格，再评质量
 
 ```
-Gate 1  JSON 能解析吗？不能 → 0 分
-Gate 2  写的 PoC 能编译吗？不能 → 利用分 = 0（识别分照算）
-Gate 3  PoC 真跑了吗？跑了但 test fail → 利用分 = 0
+Gate 1 JSON 能解析吗？不能 → 0 分
+Gate 2 写的 PoC 能编译吗？不能 → 利用分 = 0（识别分照算）
+Gate 3 PoC 真跑了吗？跑了但 test fail → 利用分 = 0
 ────── 过了 gate 才评质量 ──────
-识别分 recall / 定位分 IoU / 报告分 severity + 诱饵
+识别分 recall / 定位分 IoU / 报告分 severity + chaff bug
 ```
 
 **我们的现状**：四维评分里"利用"维度**只检查 poc 字段非空，没有真跑 Foundry**。Level 2 已经做了（`run_exploit.py`），Level 3 还没接上。这是 ALE 坐标系下我们**最明确的一个欠债**。
@@ -127,8 +127,8 @@ ALE-Bench 的题来自 NP-hard 组合优化，**真最优解算不出来**。这
 **这是 benchmark 腐烂（benchmark rot）的结构性解药**——不是靠"换一批新题"（ALE 的做法，代价是 90% 不敢公开），而是靠**同一道题上分数永远能涨**。
 
 **而我们两条都有**：
-- 题能换（埋雷引擎 + 固定 seed，可再生）
-- 难度能调（雷的数量、诱饵密度、代码混淆度、跨函数距离 —— 连续旋钮）
+- 题能换（注入漏洞引擎 + 固定 seed，可再生）
+- 难度能调（雷的数量、chaff 密度、代码混淆度、跨函数距离 —— 连续旋钮）
 
 **这是我们比 ALE-Bench 更强的地方**：它的难度是题目本身固定的，我们是**可调的连续旋钮**。这一点此前没人讲，值得单独成文（见 I11）。
 
@@ -155,7 +155,7 @@ ALE-Bench 实测（同一批题，只改时间预算）：
 
 **只报平均分不报成本，是评测报告里最常见的失真。** ALE-Bench 把两个轴一起报，这个习惯我们要学。
 
-我们自己的成本同理：埋雷用哪个模型、AI filter 用哪个模型、判分用不用 LLM judge —— 每条都有价签。**成本—质量前沿**（I10）就是这条轴的正式化。
+我们自己的成本同理：注入漏洞用哪个模型、AI filter 用哪个模型、判分用不用 LLM judge —— 每条都有价签。**成本—质量前沿**（I10）就是这条轴的正式化。
 
 ### 2.5 Performance 归一化：把分数放回人类分布里
 
@@ -176,7 +176,7 @@ ALE-Bench 论文里有一节专门做 **Contamination and Plagiarism Check**，�
 | # | 抄什么 | 落到哪 | 工作量 |
 |---|---|---|---|
 | 1 | 连续分代替二值分 | `score_report_v2` 已部分做到，exploit 模式仍是 pass/fail | 中 |
-| 2 | 难度连续旋钮（开放式上限） | 埋雷算子加参数化强度 | 中 |
+| 2 | 难度连续旋钮（开放式上限） | 注入算子加参数化强度 | 中 |
 | 3 | 时间预算 + 时间-分数曲线 | `run_benchmark` 记 wall-clock，`run_env_quality` 加饱和检测 | **小** |
 | 4 | 成本轴 + Performance 归一化 | 新模块 `engine/analytics/openended.py` | **小** |
 
@@ -188,10 +188,10 @@ ALE-Bench 论文里有一节专门做 **Contamination and Plagiarism Check**，�
 
 ```
 task/
-├── instruction.md      # 给模型看的题面
-├── environment/        # Dockerfile + 初始文件（不含答案）
-├── solution/           # oracle 解法（仅验证用）
-└── tests/              # verifier，ground truth 住在这里
+├── instruction.md # 给模型看的题面
+├── environment/ # Dockerfile + 初始文件（不含答案）
+├── solution/ # oracle 解法（仅验证用）
+└── tests/ # verifier，ground truth 住在这里
 ```
 
 **核心纪律**：ground truth **只能**住在 `tests/` 下。我们的 `run_harbor_export.py` 已经守住了这条。
@@ -200,7 +200,7 @@ task/
 
 ```
 1. 贡献者提交（自测 + checklist）
-2. CI 自动检查（oracle 解法过 / dummy 解法挂）   ← 我们缺这条
+2. CI 自动检查（oracle 解法过 / dummy 解法挂） ← 我们缺这条
 3. 专家人工 review
 ── 合并 ──
 4. 强大模型跑一遍，存轨迹
@@ -211,7 +211,7 @@ task/
 
 | Harbor 阶段 | 我们对应 | 现状 |
 |---|---|---|
-| 1. 贡献者提交 | 埋雷引擎生成 | ✅ |
+| 1. 贡献者提交 | 注入漏洞引擎生成 | ✅ |
 | 2. **CI：oracle 过 / dummy 挂** | Foundry 差分 | ❌ **缺 dummy 那一半** |
 | 3. 专家 review | —— | ❌ |
 | 4. 模型跑轨迹 | AI filter + 4 模型 baseline | ✅ |
@@ -219,7 +219,7 @@ task/
 | 6. 对抗性攻击审计 | AI filter 筛太易题 | 🔨 部分 |
 | 7. 最终决定 | 题目进/出数据集 | 🔨 |
 
-**第 2 条的 "dummy 解法必须挂" 是我们最该立刻补的**：它保证了这道题**不是白送的**——一个空答案/占位答案必须得 0 分。这跟 ALE-Bench 反对白送分是同一件事。我们已实现的诱饵题（sample-0004）就是 dummy 的一种形式，但还没系统化。
+**第 2 条的 "dummy 解法必须挂" 是我们最该立刻补的**：它保证了这道题**不是白送的**——一个空答案/占位答案必须得 0 分。这跟 ALE-Bench 反对白送分是同一件事。我们已实现的chaff 题（sample-0004）就是 dummy 的一种形式，但还没系统化。
 
 ### 3.3 版本化
 
@@ -228,9 +228,9 @@ Harbor 用 `terminal-bench@4.0` 语义版本；ALE-Bench 有排行榜版本号�
 
 ```
 datasets/
-├── v0.1/   # 7 题（Level 1）
-├── v0.2/   # 15 题（+ Level 2 exploit）
-└── v0.3/   # 25 题（+ Level 3 多文件）
+├── v0.1/ # 7 题（Level 1）
+├── v0.2/ # 15 题（+ Level 2 exploit）
+└── v0.3/ # 25 题（+ Level 3 多文件）
 ```
 
 ---
@@ -241,7 +241,7 @@ datasets/
 
 | AWM 阶段 | 我们对应 | 现状 |
 |---|---|---|
-| 1. Scenario synthesis | 埋雷算子选题 | ✅ |
+| 1. Scenario synthesis | 注入算子选题 | ✅ |
 | 2. Task synthesis | 题面生成 | ✅ |
 | 3. Database synthesis | 合约 + harness | ✅ |
 | 4. Interface synthesis | findings JSON schema | ✅ |
@@ -273,7 +273,7 @@ datasets/
 | Gate | Gate-and-score | 无 | 无 | 只做了一半 | 🔨 L3 欠 Gate 2 |
 | 防污染 | 只公开 10% | 查了没查出 | 无 | **可再生，100% 可公开** | ⭐ 我们更强 |
 | LLM judge | 强烈反对 | 无 | 无 | 待加 | 🔨 用 code-augmented |
-| dummy 检查 | 无 | 无 | oracle 过/dummy 挂 | 只有诱饵 | ❌ 缺 |
+| dummy 检查 | 无 | 无 | oracle 过/dummy 挂 | 只有chaff bug | ❌ 缺 |
 | 时间预算 | 无 | **必须报** | 无 | 没记 | ❌ 缺 |
 | 成本轴 | 无 | **必须报** | 无 | 没记 | ❌ 缺 |
 | 版本化 | 无 | 排行榜版本 | @4.0 | git hash | ✅ |
@@ -290,11 +290,11 @@ datasets/
 | # | 动作 | 来自坐标 | 工作量 | 优先级 |
 |---|---|---|---|---|
 | 1 | `run_benchmark` 记 wall-clock + token 成本 | ALE-Bench | 1 小时 | 🥇 |
-| 2 | 加 dummy 解法必须得 0（系统化诱饵） | Harbor 阶段 2 | 半天 | 🥇 |
+| 2 | 加 dummy 解法必须得 0（系统化chaff bug） | Harbor 阶段 2 | 半天 | 🥇 |
 | 3 | 自我修正循环（验证失败喂回 LLM 修） | AWM | 半天 | 🥇 |
 | 4 | 饱和检测 + 时间-分数曲线 | ALE-Bench | 半天 | 🥈 |
 | 5 | Level 3 接 Gate 2（PoC 真跑 Foundry） | ALE | 1–2 天 | 🥈 |
-| 6 | 埋雷算子加难度旋钮（连续强度参数） | ALE-Bench 开放式 | 2–3 天 | 🥈 |
+| 6 | 注入算子加难度旋钮（连续强度参数） | ALE-Bench 开放式 | 2–3 天 | 🥈 |
 | 7 | Performance 归一化（锚人类分布） | ALE-Bench | 1 天 | 🥉 |
 | 8 | 忠实度对照实验（合成池 vs 真实合约） | I9 | 1 周 | 🥉 |
 

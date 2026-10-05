@@ -1,6 +1,6 @@
 """Level 3 审计 Agent：多文件仓库端到端审计。
 
-给模型看埋雷版合约源码（不告诉它有几个雷、哪些是诱饵），
+给模型看注入版合约源码（不告诉它有几个雷、哪些是chaff），
 要求输出结构化审计报告：findings 数组，每个 finding 含
 vuln_type / contract / function / line / severity / poc 思路。
 """
@@ -18,7 +18,7 @@ _PROMPT = """你是资深 Solidity 安全审计专家。给定一个智能合约
 要求：
 1. 通读所有文件，找出所有安全漏洞。
 2. 不要假设漏洞数量——可能 0 个、1 个或多个。
-3. 区分真漏洞和诱饵（有些代码看起来危险但实际安全，不要报）。
+3. 区分真漏洞和chaff（有些代码看起来危险但实际安全，不要报）。
 4. 对每个发现的漏洞，给出：
    - vuln_type: reentrancy / access_control / unchecked_call / tx_origin / integer_error / delegatecall / other
    - contract: 合约名

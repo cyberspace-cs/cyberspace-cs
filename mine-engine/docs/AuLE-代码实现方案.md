@@ -18,7 +18,7 @@ v0.1 最大的毛病是**没标完成状态**——读起来像一份全新计�
 | 2 | 迁移现有算子到 OperatorABC　0.5 天 | ✅ **已完成** | 四个算子全部继承 `IssueOperator`：<br>`ReentrancyInjector` `AccessControlInjector` `TxOriginInjector` `VariationOperator` |
 | 3 | 写三个 Pipeline 类替换手写脚本　1 天 | ❌ **没做** | 仍然是 5 个顶层脚本（见第 4 章，**这个决定是对的**，下面解释） |
 | 4 | 加业务逻辑算子 `business_logic.py`　0.5 天 | ❌ **没做** | — |
-| 5 | 跑 baseline 验证　0.5 天 | 🟡 **部分完成** | Level 1 跑过（3 模型 F1 全 1.000）；<br>Level 2 跑过（打穿率 50–83%）；**但埋雷成功率基线没跑过** |
+| 5 | 跑 baseline 验证　0.5 天 | 🟡 **部分完成** | Level 1 跑过（3 模型 F1 全 1.000）；<br>Level 2 跑过（打穿率 50–83%）；**但注入漏洞成功率基线没跑过** |
 
 > **一句话**：v0.1 里**最有价值的那部分（统一算子抽象）已经做完了**，
 > 剩下的是三件"形式统一"的工作。所以这一版**不再把重构当主线**——
@@ -30,7 +30,7 @@ v0.1 最大的毛病是**没标完成状态**——读起来像一份全新计�
 
 | DataFlow 概念 | 它怎么做 | 我们怎么借鉴 | 落地 |
 |---|---|---|---|
-| OperatorABC | `__init__` + `run(storage, input_*_key, output_*_key)` + `get_desc()` | 统一算子基类，所有埋雷/评分/过滤算子继承 | ✅ 已落地为 `core.pipeline.Operator` |
+| OperatorABC | `__init__` + `run(storage, input_*_key, output_*_key)` + `get_desc()` | 统一算子基类，所有注入漏洞/评分/过滤算子继承 | ✅ 已落地为 `core.pipeline.Operator` |
 | FileStorage | pandas DataFrame，每步缓存 jsonl，支持 resume_step | 用 list[dict] + JSONL 文件缓存，每步落盘 | ❌ 未做 |
 | LLMServing | 算子不自己 new LLM，构造函数注入 | LLMClient 注入到需要 LLM 的算子 | ✅ `VariationOperator(client=...)` 已是注入式 |
 | PromptABC | Prompt 独立成类，`@PROMPT_REGISTRY.register()` | Prompt 模板类化，注册到全局 REGISTRY | ❌ 未做（prompt 是 agent 里的字典） |
@@ -43,29 +43,29 @@ v0.1 最大的毛病是**没标完成状态**——读起来像一份全新计�
 
 ```python
 class Operator:
-    name = "operator"
-    def __init__(self, **config):
-        for key, value in config.items():
-            setattr(self, key, value)
-    def run(self, records): raise NotImplementedError
+ name = "operator"
+ def __init__(self, **config):
+ for key, value in config.items():
+ setattr(self, key, value)
+ def run(self, records): raise NotImplementedError
 
 class Pipeline:
-    def run(self, records):
-        for operator in self.operators:
-            records = operator.run(records)
-        return list(records)
+ def run(self, records):
+ for operator in self.operators:
+ records = operator.run(records)
+ return list(records)
 
 # 四个领域无关组件抽象 —— 换赛道时实现这四个即可
-class ArtifactGenerator(Operator): ...   # 造健康材料
-class IssueOperator(Operator): ...       # 埋雷 + 产出 ground truth
-class IssueValidator(Operator): ...      # 差分验证
-class ReportScorer(Operator): ...        # 判分
+class ArtifactGenerator(Operator): ... # 造健康材料
+class IssueOperator(Operator): ... # 注入漏洞 + 产出 ground truth
+class IssueValidator(Operator): ... # 差分验证
+class ReportScorer(Operator): ... # 判分
 ```
 
 对比原方案（`run(storage, input_key, output_key)`）：
 **我们没用 storage 参数，直接用 `records` 列表传进传出。**
 这是有意简化——DataFlow 用 storage 是为了让算子之间能按 key 随机访问，
-而我们的算子是**严格单向流水线**（埋雷 → 验证 → 判分），
+而我们的算子是**严格单向流水线**（注入漏洞 → 验证 → 判分），
 列表传递就够了，多一层 storage 反而增加理解成本。
 
 ---
@@ -77,41 +77,41 @@ class ReportScorer(Operator): ...        # 判分
 ```
 mine-engine/
 ├── engine/
-│   ├── core/
-│   │   ├── pipeline.py       ✅ Operator / Pipeline / 四组件抽象（v0.1 计划的 operator.py 在此合并）
-│   │   ├── schema.py         ✅ Issue / Location 数据结构
-│   │   ├── operator.py       ❌ 未单独拆出（目前合在 pipeline.py，够用）
-│   │   ├── storage.py        ❌ 未做 —— 扩到 50+ 题时才需要
-│   │   ├── serving.py        ❌ 未做 —— 仅有 engine/llm/client.py
-│   │   └── prompt.py         ❌ 未做 —— prompt 是 agent 内的字典
-│   ├── operators/
-│   │   ├── reentrancy.py     ✅ 继承 IssueOperator
-│   │   ├── access_control.py ✅
-│   │   ├── tx_origin.py      ✅
-│   │   ├── variation.py      ✅ LLM 变体改写（已有 k 参数，参数化雏形）
-│   │   ├── business_logic.py ❌ 未做 —— 业务逻辑雷（利息算错）
-│   │   └── registry.py       🔄 在 operators/ 而非计划中的 core/
-│   ├── prompts/              ❌ 未做
-│   ├── agents/               ✅ audit / exploit / level3 三个都在
-│   ├── scorers/              ✅ report_score / level3_score
-│   ├── validators/           ✅ foundry_diff / dedup
-│   ├── adapters/             ✅ 本次新增：harbor 导出 + 三条赛道契约
-│   ├── analytics/            ✅ 本次新增：difficulty / env_quality / openended
-│   └── llm/client.py         🔄 计划中没有，实际在这里
-├── pipelines/                ❌ 未做 —— 见第 4 章，改为 5 个顶层脚本
-├── run_*.py                  ✅ 见下
-└── datasets/                 ✅ 生成的样本
+│ ├── core/
+│ │ ├── pipeline.py ✅ Operator / Pipeline / 四组件抽象（v0.1 计划的 operator.py 在此合并）
+│ │ ├── schema.py ✅ Issue / Location 数据结构
+│ │ ├── operator.py ❌ 未单独拆出（目前合在 pipeline.py，够用）
+│ │ ├── storage.py ❌ 未做 —— 扩到 50+ 题时才需要
+│ │ ├── serving.py ❌ 未做 —— 仅有 engine/llm/client.py
+│ │ └── prompt.py ❌ 未做 —— prompt 是 agent 内的字典
+│ ├── operators/
+│ │ ├── reentrancy.py ✅ 继承 IssueOperator
+│ │ ├── access_control.py ✅
+│ │ ├── tx_origin.py ✅
+│ │ ├── variation.py ✅ LLM 变体改写（已有 k 参数，参数化雏形）
+│ │ ├── business_logic.py ❌ 未做 —— 业务逻辑雷（利息算错）
+│ │ └── registry.py 🔄 在 operators/ 而非计划中的 core/
+│ ├── prompts/ ❌ 未做
+│ ├── agents/ ✅ audit / exploit / level3 三个都在
+│ ├── scorers/ ✅ report_score / level3_score
+│ ├── validators/ ✅ foundry_diff / dedup
+│ ├── adapters/ ✅ 本次新增：harbor 导出 + 三条赛道契约
+│ ├── analytics/ ✅ 本次新增：difficulty / env_quality / openended
+│ └── llm/client.py 🔄 计划中没有，实际在这里
+├── pipelines/ ❌ 未做 —— 见第 4 章，改为 5 个顶层脚本
+├── run_*.py ✅ 见下
+└── datasets/ ✅ 生成的样本
 ```
 
 **为什么说 registry 放 `operators/` 是对的**：
-它注册的是"埋雷算子"（含 swc 编号、默认难度、作用哪个健康合约），
+它注册的是"注入算子"（含 swc 编号、默认难度、作用哪个种子合约），
 跟这些算子放一起比放 core 里更好找。v0.1 计划的位置不必追。
 
 ### 顶层脚本（v0.1 写的 `run_level1.py` / `run_level2.py` 不存在）
 
 | 实际脚本 | 干什么 |
 |---|---|
-| `batch_generate.py` | 批量埋雷 + 差分验证，落盘 datasets/ |
+| `batch_generate.py` | 批量注入漏洞 + 差分验证，落盘 datasets/ |
 | `run_ai_filter.py` | 便宜模型先做一遍，筛掉太简单/有问题的题 |
 | `run_benchmark.py` | Level 1 正式考试 + 判分（支持 `--repeat N`） |
 | `run_exploit.py` | Level 2 让模型写 PoC 并真跑 |
@@ -130,10 +130,10 @@ mine-engine/
 
 ```python
 class Operator:
-    name = "operator"
-    def __init__(self, **config):      # v0.1 写 self.kwargs = kwargs，
-        for k, v in config.items():    # 实际是 setattr，好处是算子内可直接 self.k / self.seed
-            setattr(self, k, v)
+ name = "operator"
+ def __init__(self, **config): # v0.1 写 self.kwargs = kwargs，
+ for k, v in config.items(): # 实际是 setattr，好处是算子内可直接 self.k / self.seed
+ setattr(self, k, v)
 ```
 
 > 这个改动是**有意的**，不是实现偏差：写成 `self.seed` 比 `self.kwargs["seed"]`
@@ -145,18 +145,18 @@ v0.1 的设计（保留，未实现）：
 
 ```python
 class JSONLStorage:
-    def __init__(self, path, cache_dir="./cache"): ...
-    def write(self, step_name, records): ...   # 每步落盘，支持 resume
+ def __init__(self, path, cache_dir="./cache"): ...
+ def write(self, step_name, records): ... # 每步落盘，支持 resume
 ```
 
 ### 3.3 Pipeline　🟡 基类有，流程是脚本
 
 ```python
 class Pipeline:
-    def run(self, records):
-        for operator in self.operators:
-            records = operator.run(records)
-        return list(records)
+ def run(self, records):
+ for operator in self.operators:
+ records = operator.run(records)
+ return list(records)
 ```
 
 ### 3.4 LLM 客户端　🔄 计划外，但现在是关键缺口
@@ -178,7 +178,7 @@ return data["choices"][0]["message"]["content"]
 v0.1 画的 Level 1 是一条长流水线：
 
 ```
-健康合约 → 三个 Injector → Variation → FoundryDiff → DedupFilter
+种子合约 → 三个 Injector → Variation → FoundryDiff → DedupFilter
 → AIFilter → AuditAgent → ReportScorer
 ```
 
@@ -186,12 +186,12 @@ v0.1 画的 Level 1 是一条长流水线：
 
 **拆分是对的，别再合并回去**，三个理由：
 
-1. **成本**：埋雷 + 差分验证要跑 `forge test`，很慢；判分要调 LLM，要钱。
-   合成一条流水线，每次调 prompt 都得重跑埋雷。
+1. **成本**：注入漏洞 + 差分验证要跑 `forge test`，很慢；判分要调 LLM，要钱。
+ 合成一条流水线，每次调 prompt 都得重跑注入漏洞。
 2. **可检查**：中间产物（datasets/sample-*/）能直接打开看，
-   出问题知道卡在哪一步。合成一条流水线只能看到最终分数。
+ 出问题知道卡在哪一步。合成一条流水线只能看到最终分数。
 3. **可缓存**：题目生成一次，可以拿去考很多个模型。
-   这是 benchmark 引擎的本职工作——**题和考试本来就该分开**。
+ 这是 benchmark 引擎的本职工作——**题和考试本来就该分开**。
 
 > 一句话：**出题是一次性的，考试是反复的。** 分开才对。
 
@@ -234,7 +234,7 @@ v0.1 的五步里，**第 2 步已完成、第 1 步大部分已完成**。
 
 两个真实坑：
 - 各供应商字段名不一致（OpenAI 系 `prompt_tokens`/`completion_tokens`，
-  有的厂商叫 `input_tokens`/`output_tokens`），要都认
+ 有的厂商叫 `input_tokens`/`output_tokens`），要都认
 - 单价表要能配置，不能写死在代码里
 
 **验收**：跑一次 `run_benchmark.py`，结果文件里每个模型都有
@@ -244,7 +244,7 @@ v0.1 的五步里，**第 2 步已完成、第 1 步大部分已完成**。
 
 ### S2 · 加业务逻辑算子 `business_logic.py`　⏱ 1 天　🥈
 
-**做什么**：第五个埋雷算子，埋"业务逻辑错误"（比如利息算错一位小数）。
+**做什么**：第五个注入算子，埋"业务逻辑错误"（比如利息算错一位小数）。
 
 **为什么**：环境四维体检实测**多样性只有 0.3665**，诊断是
 "类别均衡 0.975 很高，但**结构离散只有 0.173**——雷型分散，代码同质"。
@@ -256,7 +256,7 @@ v0.1 的五步里，**第 2 步已完成、第 1 步大部分已完成**。
 **本版裁决：排在四步走之后**。理由——它是"加题"，而当前第一问题是
 "现有的题都考满分、区分度为零"。**先让卷子有区分度，再往卷子里加题。**
 
-**验收**：新算子埋的雷能通过差分验证（健康版 PoC 打不穿、埋雷版打得穿），
+**验收**：新算子埋的雷能通过差分验证（未注入版 PoC 打不穿、注入版打得穿），
 且 `run_env_quality.py` 的**结构离散度上升**（记下前后数字对比）。
 
 ---
@@ -306,10 +306,10 @@ v0.1 的五步里，**第 2 步已完成、第 1 步大部分已完成**。
 
 ```
 主线（10-action-plan 四步走，约 4 天）
-  ① 记时间与钱   ← 依赖本方案 S1
-  ② 防伪检查（白卷 / 标准答案 / 反向白卷）
-  ③ 题坏了喂回去修（自我修正循环）
-  ④ 难度连续旋钮
+ ① 记时间与钱 ← 依赖本方案 S1
+ ② 防伪检查（白卷 / 标准答案 / 反向白卷）
+ ③ 题坏了喂回去修（自我修正循环）
+ ④ 难度连续旋钮
 支线（本文档 S2–S4）：主线跑完、或需要扩题时再做
 ```
 

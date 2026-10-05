@@ -10,10 +10,10 @@
 `engine/core/pipeline.py` 定义了四个抽象，这是整个项目最有价值的部分：
 
 ```
-ArtifactGenerator  生成/加载"健康基准体"（干净、能正常工作的材料）
-IssueOperator      在健康体上注入一个已知问题 + 产出 ground truth
-IssueValidator     差分验证：雷在埋雷版可触发、在健康版不可触发、原有功能仍通过
-ReportScorer       把审计报告对 ground truth 判 recall / precision / F1
+ArtifactGenerator 生成/加载"种子程序"（干净、能正常工作的材料）
+IssueOperator 在种子程序上注入一个已知问题 + 产出 ground truth
+IssueValidator 差分验证：雷在注入版可触发、在未注入版不可触发、原有功能仍通过
+ReportScorer 把审计报告对 ground truth 判 recall / precision / F1
 ```
 
 **为什么这个抽象值钱**：它是"领域无关"的。换掉四者的实现，同一套编排层就能从
@@ -42,11 +42,11 @@ ReportScorer       把审计报告对 ground truth 判 recall / precision / F1
 ### 2.2 数据集（`datasets/`，7 个样本）
 
 ```
-sample-0001  Vault   / reentrancy      / SWC-107 / critical / 难度2 / ai_filter=trivial
-sample-0002  Ownable / access_control  / SWC-105 / high     / 难度1 / ai_filter=differentiating
-sample-0003  Wallet  / tx_origin       / SWC-115 / high     / 难度2 / ai_filter=trivial
-sample-0004  Station / decoy（无雷诱饵）/ —      / none     / 难度0 / ai_filter=trivial
-sample-0001-v1 / 0002-v1 / 0003-v1   ← LLM 变体版本
+sample-0001 Vault / reentrancy / SWC-107 / critical / 难度2 / ai_filter=trivial
+sample-0002 Ownable / access_control / SWC-105 / high / 难度1 / ai_filter=differentiating
+sample-0003 Wallet / tx_origin / SWC-115 / high / 难度2 / ai_filter=trivial
+sample-0004 Station / decoy（无雷chaff bug）/ — / none / 难度0 / ai_filter=trivial
+sample-0001-v1 / 0002-v1 / 0003-v1 ← LLM 变体版本
 ```
 
 `meta.json` 里的 ground truth 结构完整（`Issue` dataclass：类型 / SWC / 严重级 /
@@ -84,10 +84,10 @@ README 自己诚实地写了"区分度刚起步，题还要继续加难"——�
 
 ```python
 def _norm_type(t) -> str:
-    x = str(t).lower().strip()
-    for std, aliases in _TYPE_ALIASES.items():
-        if x == std or any(a in x for a in aliases):   # ← 子串匹配
-            return std
+ x = str(t).lower().strip()
+ for std, aliases in _TYPE_ALIASES.items():
+ if x == std or any(a in x for a in aliases): # ← 子串匹配
+ return std
 ```
 
 `_TYPE_ALIASES["reentrancy"]` 含 `"reentrant"`。模型若输出
@@ -113,9 +113,9 @@ docs/
 
 ### 🟠 P1 · 统计力不足（对外讲最大的软肋）
 
-- 样本仅 **7 个**（3 类漏洞 × {原题, 变体} + 1 诱饵）。任何结论的置信区间都极宽。
+- 样本仅 **7 个**（3 类漏洞 × {原题, 变体} + 1 chaff bug）。任何结论的置信区间都极宽。
 - README 已观察到"单次跑有随机性"，但代码仍是 **单次采样、temperature=0**，
-  没有重复实验、没有方差、没有显著性检验。
+ 没有重复实验、没有方差、没有显著性检验。
 - `difficulty` 是**手填**的 1/2，不是实测校准值。
 
 **建议**：`run_benchmark` 加 `--repeat N`（默认 5），输出 mean ± std；
@@ -125,8 +125,8 @@ docs/
 
 ```python
 def _run_forge(self):
-    proc = subprocess.run([self.forge, "test", "--root", str(self.root)], ...)
-    ok = proc.returncode == 0 and "0 failed" in log
+ proc = subprocess.run([self.forge, "test", "--root", str(self.root)], ...)
+ ok = proc.returncode == 0 and "0 failed" in log
 ```
 
 每验证一条记录就跑一次**全量** `forge test`，靠全局"0 failed"判定。
@@ -149,10 +149,10 @@ def _run_forge(self):
 ### 🟡 P2 · 配置一致性
 
 - `run_level3.py` 硬编码 `BASE="https://api.deepseek.com/v1"` 和 `MODELS`，
-  而其余脚本统一走环境变量。应统一为 `LLM_BASE_URL` / `LLM_MODELS`。
+ 而其余脚本统一走环境变量。应统一为 `LLM_BASE_URL` / `LLM_MODELS`。
 - `run_exploit.py::classify_forge_output` 用 `"error:" in low` 判编译失败，
-  而 `-vvv` 输出中正常路径也可能出现 "error" 字样，存在误杀。
-  应改用 `forge test --json` 的结构化输出解析。
+ 而 `-vvv` 输出中正常路径也可能出现 "error" 字样，存在误杀。
+ 应改用 `forge test --json` 的结构化输出解析。
 - `results_level3.json` 未加入 `.gitignore`。
 
 ---
@@ -160,10 +160,10 @@ def _run_forge(self):
 ## 4. 能力边界：现在能说 / 不能说
 
 **能说**
-- ✅ 完整闭环已跑通：健康体 → 埋雷 → 差分 PoC 证明 → 报告判分
+- ✅ 完整闭环已跑通：种子程序 → 注入漏洞 → 差分 PoC 证明 → 报告判分
 - ✅ precision 与 recall 同时计分，防"全报一遍"刷分（README 表格已验证）
 - ✅ 确定性算子 + 固定 seed，两次运行 index.jsonl SHA256 一致（可复现）
-- ✅ 诱饵样本 + AI Filter，已在做对抗筛选
+- ✅ chaff 样本 + AI Filter，已在做对抗筛选
 - ✅ Exploit 模式：从"会说"推进到"能真打穿"
 
 **不能说（还差得远）**
@@ -176,7 +176,7 @@ def _run_forge(self):
 
 ## 5. 一句话改进纲领
 
-> **把叙事从"合约埋雷脚本"升级为"抗污染、可再生的审计评测引擎"，
+> **把叙事从"合约注入漏洞脚本"升级为"抗污染、可再生的审计评测引擎"，
 > 把判分从"类型集合匹配"升级为"定位 + 证据链 + 严重度加权"，
 > 把规模从 7 题推到 100+ 题，并把四组件抽象真正用到第二个赛道上。**
 

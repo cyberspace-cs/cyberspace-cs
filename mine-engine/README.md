@@ -1,10 +1,10 @@
-# mine-engine · 动态对抗审计考试的埋雷引擎（M0–M3）
+# mine-engine · 动态对抗审计考试的注入漏洞引擎（M0–M3）
 
 > **项目代号：AuLE = Adaptive Audit Last Exam**（自适应审计终局考试）
 > 对标 **ALE / Agents' Last Exam**（UC Berkeley RDI, arXiv:2606.05405）。
 
 把「动态对抗考试 / Adaptive Verifier」落到**智能合约审计**垂直场景的最小可用引擎：
-自动在**健康合约**上做一次最小化、可复现的程序变换（埋雷），用**差分 PoC**
+自动在**种子合约**上做一次最小化、可复现的程序变换（注入漏洞），用**差分 PoC**
 证明雷确实是这次埋进去的，再把审计 Agent 的报告对 ground truth 判分。
 
 范式对齐 **OpenDCAI/DataFlow**（https://github.com/OpenDCAI/DataFlow）：
@@ -13,12 +13,12 @@
 ## 闭环
 
 ```
-健康合约 ──埋雷算子──▶ 埋雷版 + ground truth
-                              │
-                  差分 PoC（forge test）
-   健康版：攻击失败 / 埋雷版：攻击成功 / happy-path 全过
-                              │
-                  审计报告 ──▶ recall / precision / F1
+种子合约 ──注入算子──▶ 注入版 + ground truth
+ │
+ 差分 PoC（forge test）
+ 未注入版：攻击失败 / 注入版：攻击成功 / happy-path 全过
+ │
+ 审计报告 ──▶ recall / precision / F1
 ```
 
 ## 目录结构
@@ -26,28 +26,28 @@
 ```
 mine-engine/
 ├─ src/
-│  ├─ Vault.sol                 # 健康：资金池（正确 CEI，抗重入）
-│  ├─ Ownable.sol               # 健康：访问控制（onlyOwner）
-│  ├─ Attacker.sol              # 重入攻击合约（PoC 工具）
-│  └─ planted/
-│     ├─ VaultPlanted.sol       # 埋雷：重入（SWC-107）黄金输出
-│     └─ OwnablePlanted.sol     # 埋雷：访问控制缺失（SWC-105）黄金输出
+│ ├─ Vault.sol # 健康：资金池（正确 CEI，抗重入）
+│ ├─ Ownable.sol # 健康：访问控制（onlyOwner）
+│ ├─ Attacker.sol # 重入攻击合约（PoC 工具）
+│ └─ planted/
+│ ├─ VaultPlanted.sol # 注入漏洞：重入（SWC-107）黄金输出
+│ └─ OwnablePlanted.sol # 注入漏洞：访问控制缺失（SWC-105）黄金输出
 ├─ test/
-│  ├─ Vault.t.sol               # Vault 正常功能（4 项）
-│  ├─ Ownable.t.sol             # Ownable 正常功能（5 项）
-│  ├─ VaultReentrancyPoC.t.sol  # 重入差分 PoC
-│  └─ OwnableAccessControlPoC.t.sol  # 访问控制差分 PoC
-├─ engine/                      # DataFlow 风格 Python（零第三方依赖）
-│  ├─ core/                     # Pipeline/Operator 基类 + Issue schema
-│  ├─ generators/               # ArtifactGenerator：加载健康合约
-│  ├─ operators/
-│  │  ├─ registry.py            # 算子注册中心（核心 IP：按类型动态取用）
-│  │  ├─ reentrancy.py          # 重入埋雷（确定性源码变换）
-│  │  └─ access_control.py      # 访问控制埋雷（删除身份校验）
-│  ├─ validators/               # IssueValidator：forge 差分验证（领域无关）
-│  └─ scorers/                  # ReportScorer：报告判分
-├─ datasets/                    # 生成样本落盘（clean/planted/meta.json）
-└─ run_demo.py                  # 一键演示完整闭环
+│ ├─ Vault.t.sol # Vault 正常功能（4 项）
+│ ├─ Ownable.t.sol # Ownable 正常功能（5 项）
+│ ├─ VaultReentrancyPoC.t.sol # 重入差分 PoC
+│ └─ OwnableAccessControlPoC.t.sol # 访问控制差分 PoC
+├─ engine/ # DataFlow 风格 Python（零第三方依赖）
+│ ├─ core/ # Pipeline/Operator 基类 + Issue schema
+│ ├─ generators/ # ArtifactGenerator：加载种子合约
+│ ├─ operators/
+│ │ ├─ registry.py # 算子注册中心（核心 IP：按类型动态取用）
+│ │ ├─ reentrancy.py # 重入注入漏洞（确定性源码变换）
+│ │ └─ access_control.py # 访问控制注入漏洞（删除身份校验）
+│ ├─ validators/ # IssueValidator：forge 差分验证（领域无关）
+│ └─ scorers/ # ReportScorer：报告判分
+├─ datasets/ # 生成样本落盘（clean/planted/meta.json）
+└─ run_demo.py # 一键演示完整闭环
 ```
 
 ## 运行
@@ -66,20 +66,20 @@ forge test
 
 ## M2 实测结果
 
-- **2 个健康合约**（Vault / Ownable）、**2 个埋雷算子**（重入 SWC-107 / 访问控制 SWC-105），
-  经**算子注册中心**按类型动态编排；
-- 算子生成的埋雷版与黄金版**归一化等价**（忽略注释/空白）；
+- **2 个种子合约**（Vault / Ownable）、**2 个注入算子**（重入 SWC-107 / 访问控制 SWC-105），
+ 经**算子注册中心**按类型动态编排；
+- 算子生成的注入版与黄金版**归一化等价**（忽略注释/空白）；
 - `forge test` **13/13 通过**：9 项 happy-path、4 项差分 PoC
-  （健康版攻击失败 / 埋雷版攻击成功）；
+ （未注入版攻击失败 / 注入版攻击成功）；
 - 报告判分（ground truth = reentrancy）：
 
-  | 报告策略 | recall | precision | F1 |
-  |---|---|---|---|
-  | 把所有类型全报一遍（作弊） | 1.0 | 0.083 | 0.154 |
-  | 只报确实发现的重入（好审计） | 1.0 | 1.0 | 1.0 |
-  | 什么都没发现（漏报） | 0.0 | 1.0 | 0.0 |
+ | 报告策略 | recall | precision | F1 |
+ |---|---|---|---|
+ | 把所有类型全报一遍（作弊） | 1.0 | 0.083 | 0.154 |
+ | 只报确实发现的重入（好审计） | 1.0 | 1.0 | 1.0 |
+ | 什么都没发现（漏报） | 0.0 | 1.0 | 0.0 |
 
-  precision 与 recall 同时计分，误报被惩罚，防止「全报一遍」刷分。
+ precision 与 recall 同时计分，误报被惩罚，防止「全报一遍」刷分。
 
 ## M3 批量生成
 
@@ -87,8 +87,8 @@ forge test
 py batch_generate.py
 ```
 
-- 遍历 `(健康合约 × 埋雷算子)` 组合，逐条做 Foundry 差分验证；
-  通过则落盘 `datasets/sample-XXXX/`，失败自动丢弃并记录；
+- 遍历 `(种子合约 × 注入算子)` 组合，逐条做 Foundry 差分验证；
+ 通过则落盘 `datasets/sample-XXXX/`，失败自动丢弃并记录；
 - 产出 `datasets/index.jsonl`（每行一个样本，含 contract/vuln/swc/severity/难度/路径/validated）；
 - 当前 2 组合 **差分通过 2/2（有效率 100%）**；
 - 固定 seed，两次运行 `index.jsonl` 的 SHA256 完全一致（**可复现**）；
@@ -109,7 +109,7 @@ py run_benchmark.py
 - `engine/scorers/report_score.py::score_report`：函数级判分——vuln_type 归一化 + function token 交集，误报计入 FP；
 - `run_benchmark.py`：对 index.jsonl 每个样本跑指定模型，输出 TP/FP/FN/Recall/Precision/F1 汇总表。
 
-**baseline 实测（7 样本：3 雷×{原题,LLM变体} + 1 诱饵，DashScope 网关，standard prompt）**：
+**baseline 实测（7 样本：3 雷×{原题,LLM变体} + 1 chaff bug，DashScope 网关，standard prompt）**：
 
 > ⚠️ **本表是早期 baseline（DashScope 网关 + v1 判分器），已被真实跑测刷新**：
 > [`docs/12`](./docs/12-真实模型接入与踩坑记.md) 用 DeepSeek 官方网关 + v2 判分器跑同一批样本，
@@ -139,8 +139,8 @@ py run_benchmark.py
 1. **Detect 满分 ≠ Exploit 打穿**——同一模型在两种模式下的排名会变；
 2. **tx_origin 是终极区分题**——模型不知道 Foundry 要用 `vm.prank(sender, origin)` 双参模拟；
 3. **deepseek-v4-pro 反而不如 flash**——这不是推理能力问题，是长代码生成时
-   `max_tokens=4096` 不够导致**截断**（sample-0001 直接 `vm.deal(vict` 断掉）。
-   ⚠️ 这是**评测假象**，不修正会把"生成长度限制"误当成"能力差异"。
+ `max_tokens=4096` 不够导致**截断**（sample-0001 直接 `vm.deal(vict` 断掉）。
+ ⚠️ 这是**评测假象**，不修正会把"生成长度限制"误当成"能力差异"。
 
 ## M7 · 抗污染、可复现、接入行业标准
 
@@ -157,8 +157,8 @@ EVMbench 用训练截止后的真实事故做无污染重测，Agent 表现断�
 正在成为跑分的事实标准。一键把数据集导出成它的任务三元组：
 
 ```shell
-py run_harbor_export.py                    # 默认 detect 模式 -> harbor_tasks/
-py run_harbor_export.py --mode exploit     # 判攻击 PoC 能否真打穿
+py run_harbor_export.py # 默认 detect 模式 -> harbor_tasks/
+py run_harbor_export.py --mode exploit # 判攻击 PoC 能否真打穿
 
 uv tool install harbor
 harbor run --dataset-path harbor_tasks --agent claude-code --model anthropic/claude-opus-4-1
@@ -199,10 +199,10 @@ CRS 只有"引擎型"benchmark 能算，静态数据集算不了——这是我�
 （注意别把 AWM 的编号和 ALE 的 2606.05405 搞混——这是两个不同的东西。）
 
 ```shell
-py run_env_quality.py                       # 体检 datasets/
-py run_env_quality.py --gold results.json   # 补正确性维（黄金解答自测）
-py run_env_quality.py --reference real/     # 补忠实度维（真实任务锚定集）
-py run_env_quality.py --json                # 机读输出
+py run_env_quality.py # 体检 datasets/
+py run_env_quality.py --gold results.json # 补正确性维（黄金解答自测）
+py run_env_quality.py --reference real/ # 补忠实度维（真实任务锚定集）
+py run_env_quality.py --json # 机读输出
 ```
 
 当前实测（7 样本）：
@@ -222,13 +222,13 @@ from engine.analytics import saturation_check, cost_quality_frontier
 
 # 给更多时间还能涨多少分？三点法拟合渐近线
 saturation_check([(3600, 58.8), (14400, 77.7), (259200, 87.6), (604800, 92.1)])
-# -> asymptote=92.70  headroom=0.60  verdict='saturated'
-#    （ALE-Bench 论文实测曲线，被正确判为已贴天花板）
+# -> asymptote=92.70 headroom=0.60 verdict='saturated'
+# （ALE-Bench 论文实测曲线，被正确判为已贴天花板）
 
 # 谁在成本—质量帕累托前沿上？
 cost_quality_frontier([
-    {"name": "OpenHands",   "cost": 3.25,   "score": 905},
-    {"name": "ALE-Agent",   "cost": 100.33, "score": 1879},
+ {"name": "OpenHands", "cost": 3.25, "score": 905},
+ {"name": "ALE-Agent", "cost": 100.33, "score": 1879},
 ])
 ```
 
@@ -241,7 +241,7 @@ ALE-Bench（Sakana × AtCoder, arXiv:2506.09050）的三条纪律：**连续分�
 **只看分数是平手，看完成本是天壤之别**。没有这两列，这个问题根本答不出来。
 
 ```shell
-$env:LLM_PRICES='{"qwen3.8-flash":{"in":0.2,"out":2.0}}'   # USD / 百万 token
+$env:LLM_PRICES='{"qwen3.8-flash":{"in":0.2,"out":2.0}}' # USD / 百万 token
 py run_benchmark.py --repeat 3 --out results.json
 ```
 
@@ -259,15 +259,15 @@ py run_benchmark.py --repeat 3 --out results.json
 行业术语叫 **dummy check / oracle check**（Terminal-Bench 的 `harbor run --agent oracle`）。
 每道题都要先证明自己不是废题：
 
-| 检查 | 普通题 | 诱饵题 |
+| 检查 | 普通题 | chaff 题 |
 | --- | --- | --- |
 | 白卷（什么都不答） | 必须 **0 分** | 必须 **满分**（没乱报才是对的） |
 | 标准答案（由 ground truth 自动构造） | 必须 **满分** | 必须 **满分** |
 | 反向白卷（故意乱报一个） | 仅记录 | 必须 **0 分** |
 
 ```shell
-py run_dummy_check.py                # 表格输出，退出码 1 = 有废题（可接 CI）
-py run_dummy_check.py --json         # 机器可读
+py run_dummy_check.py # 表格输出，退出码 1 = 有废题（可接 CI）
+py run_dummy_check.py --json # 机器可读
 ```
 
 > 白卷检查专抓一类**不会报错的 bug**：判分逻辑写错导致"什么都不答也能得分"，
@@ -281,19 +281,19 @@ py run_dummy_check.py --json         # 机器可读
 ALE（三档离散）和 ALE-Bench（题目自带、不可调）都没有的**。
 
 ```shell
-# 离线：只看"题目长相"是否真的变了（诱饵/伪装/跨函数随刻度单调增加）
+# 离线：只看"题目长相"是否真的变了（chaff bug/伪装/跨函数随刻度单调增加）
 py run_difficulty_sweep.py
 
 # 静态体检：插进去的代码能不能编译（本机无 forge 时的护栏）
-py run_difficulty_lint.py       # 括号配平 / 依赖符号已声明 / 无重名函数 / 无自曝身份
+py run_difficulty_lint.py # 括号配平 / 依赖符号已声明 / 无重名函数 / 无自曝身份
 
 # 真跑：出"难度刻度 → F1 / 误报率 / 耗时 / 成本"曲线（会花钱）
 py run_difficulty_sweep.py --audit --repeat 3 \
-   --samples sample-0001,sample-0002,sample-0003 --model deepseek-flash
+ --samples sample-0001,sample-0002,sample-0003 --model deepseek-flash
 ```
 
-> ⚠️ **写"伪装类"算子的头号陷阱：诱饵不能自曝身份。**
-> 最初诱饵函数叫 `decoyPayout`、注释写着 `[decoy] looks risky but...`，
+> ⚠️ **写"伪装类"算子的头号陷阱：chaff bug 不能自曝身份。**
+> 最初chaff 函数叫 `decoyPayout`、注释写着 `[decoy] looks risky but...`，
 > 模型读到注释就知道这段无害、直接跳过，**难度旋钮退化成"只加长度不加难度"，F1 反而上升**。
 > 真实工程里攻击者不会给代码写批注说明自己无害。详见 [doc 12 第 7 节](./docs/12-真实模型接入与踩坑记.md)。
 
@@ -302,9 +302,9 @@ py run_difficulty_sweep.py --audit --repeat 3 \
 本机没有密钥时，用假 LLM 也能验证记账链路是否正确：
 
 ```shell
-py run_offline_smoke.py          # 19 项断言（记账/截断判定/env 加载/定价）
-py run_implementation_smoke.py   # 旋钮三条硬规则 + 自我修正循环收敛
-py run_difficulty_lint.py        # 18 项静态体检
+py run_offline_smoke.py # 19 项断言（记账/截断判定/env 加载/定价）
+py run_implementation_smoke.py # 旋钮三条硬规则 + 自我修正循环收敛
+py run_difficulty_lint.py # 18 项静态体检
 ```
 
 ### 三条赛道（四组件领域无关，换 adapter 即可）
@@ -345,16 +345,16 @@ print([d.name_cn for d in list_domains()]); print(scaffold_checklist('corp-audit
 ## 下一步（M8+）
 
 - **自我修正循环**（半天，性价比最高）：验证失败时把 `forge` 的 stderr + 源码喂回 LLM
-  让它修自己的埋雷代码。AWM 平均 **1.13 次迭代**即可修复，各阶段成功率 > 85%。
-  不做这个，扩题池会被算子成功率卡死；
+ 让它修自己的注入漏洞代码。AWM 平均 **1.13 次迭代**即可修复，各阶段成功率 > 85%。
+ 不做这个，扩题池会被算子成功率卡死；
 - **补多样性**：当前结构离散度仅 0.173（雷型分散但代码同质），
-  加组合雷 / 更隐蔽诱饵 / 变体改写，并用 `run_env_quality.py` 持续监控；
+ 加组合雷 / 更隐蔽chaff bug / 变体改写，并用 `run_env_quality.py` 持续监控；
 - **建立真实任务锚定集**：忠实度完全没被度量，而它是唯一能摧毁整个方法论的维度；
 - **继续加难**：unchecked call（SWC-104）、组合雷（同合约多雷）；
-  让 qwen 系也开始丢分；
+ 让 qwen 系也开始丢分；
 - **Review 模式**：给模型一份"已完成的审计报告"，里面埋了错误结论，让它复核
-  （借鉴 FinancialAuditBench 的 review 设定，成本更低、区分度更高）；
+ （借鉴 FinancialAuditBench 的 review 设定，成本更低、区分度更高）；
 - 多轮工具调用 Agent（读文件 / grep / forge test）替代单轮；
 - 远程沙箱部署 Foundry + harness，做批量/受控评测；
 - **第二个 adapter**：优先企业审计（验证器最硬、数据最公开），证明四组件抽象真的跨赛道；
-- 埋雷–审计共演化。
+- 注入漏洞–审计共演化。

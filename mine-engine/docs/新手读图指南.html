@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AuLE 新手读图指南（零基础版）</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1f2328; --muted:#57606a; --line:#d0d7de;
+    --blue:#0969da; --blue-bg:#ddf4ff;
+    --red:#cf222e; --red-bg:#ffebe9;
+    --green:#1a7f37; --green-bg:#dafbe1;
+    --yellow:#9a6700; --yellow-bg:#fff8c5;
+    --purple:#8250df;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+       line-height:1.78;font-size:16px}
+  .wrap{max-width:1120px;margin:0 auto;padding:40px 24px 80px}
+  h1{font-size:28px;margin:0 0 6px}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:26px}
+  h2{font-size:21px;margin:46px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+  h3{font-size:17px;margin:26px 0 8px}
+  p{margin:10px 0}
+  a{color:var(--blue)}
+  .lead{background:var(--yellow-bg);border-left:4px solid var(--yellow);
+        padding:12px 16px;border-radius:6px;margin:16px 0}
+  .card{border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:16px 0;background:#fcfcfd}
+  .card h3{margin-top:0}
+  figure{margin:18px 0;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .figbox{padding:14px;overflow-x:auto;text-align:center}
+  figure img{display:block;margin:0 auto;width:auto;max-width:100%;height:auto}
+  figcaption{padding:9px 14px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);background:#f6f8fa}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#f6f8fa;font-weight:600}
+  code{background:#f0f2f4;padding:1px 5px;border-radius:4px;font-size:13px}
+  .tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;margin-right:6px}
+  .t-who{background:var(--blue-bg);color:var(--blue)}
+  .t-gap{background:var(--red-bg);color:var(--red)}
+  .t-us{background:var(--green-bg);color:var(--green)}
+  .t-key{background:var(--yellow-bg);color:var(--yellow)}
+  .t-todo{background:#eef2f7;color:#37474f}
+  ol,ul{padding-left:22px}
+  li{margin:6px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .q{color:var(--purple);font-weight:600}
+  footer{margin-top:60px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>AuLE 新手读图指南</h1>
+<div class="sub">不假设你知道任何名词 · 读完能自己复述「我们到底在补哪一环」· 同步最新方案 v5</div>
+
+<div class="lead">
+<b>一句话版本：</b>AI 评测就像一场考试，里面有<b>三件事</b>——造题、判分、考务。前两件都有人在做，第三件也有人做；
+但<span class="tag t-gap">缺口</span><b>「阅卷老师自己看错了怎么办」从来没有任何人负责</b>。我们补的就是这一格。
+</div>
+
+<h2>0. 读之前，先记住三个词</h2>
+<table>
+  <tr><th style="width:130px">词</th><th>大白话</th></tr>
+  <tr><td><b>判分器 / verifier</b></td><td>阅卷老师。看完 agent 交的活，给出 0 或 1。它<b>自己也会犯错</b>。</td></tr>
+  <tr><td><b>账套</b></td><td>一套完整的公司账目。我们的实验材料。干净的账套 = 本来没问题的账。</td></tr>
+  <tr><td><b>算子</b></td><td>「做手脚」的程序。往干净账套里<b>亲手塞一个已知错误</b>，于是我们事先就知道正确答案。</td></tr>
+</table>
+
+<h2>1. 第一张图：我们到底在补哪一格</h2>
+<p class="q">先问自己：一场考试里，「判卷老师自己看错了」这件事，归谁管？</p>
+<p>答案是——<b>没人管</b>。出题的不管判分，管判分的只负责把程序跑完，跑考务的只管流程。</p>
+
+<figure>
+  <div class="figbox"><img src="./figures/fig9-beginner-orientation.svg" alt="Fig9 零基础定位图"></div>
+  <figcaption>Fig9 · 零基础定位图。全图不出现任何英文缩写 · <a href="./figures/fig9-beginner-orientation.svg" target="_blank">新窗口打开原图</a></figcaption>
+</figure>
+
+<div class="grid">
+  <div class="card">
+    <h3>① 三件事，各自有人管</h3>
+    <ul>
+      <li><span class="tag t-who">造题</span><b>ALE</b>（1490 道真实工作题，只公开 150 道防泄题）</li>
+      <li><span class="tag t-who">判分 / 考务</span><b>Harbor</b>（忠实执行判分程序，最后只写出 0 或 1）</li>
+    </ul>
+    <p style="color:var(--red);margin-bottom:0"><b>但没有人检查判分器本身对不对。</b></p>
+  </div>
+  <div class="card">
+    <h3>② 怎么测它：只问两次</h3>
+    <ul>
+      <li>给它<b>干净</b>账套 → 它却报错 ⇒ <b>误报</b>（没病说有病）</li>
+      <li>给它<b>做过手脚</b>的账套 → 它没查出来 ⇒ <b>漏报</b>（有病说没病）</li>
+      <li>合成一个数：<code>J = 1 − 误报 − 漏报</code>　J=0 等于瞎猜，J&lt;0 比瞎猜还糟</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <h3>③ 为什么别人做不到、我们能做到</h3>
+  <p>要判断判分器判错没有，就得<b>先知道正确答案</b>。而正确答案通常得靠专家人工标注，很贵——同类工作烧过 <b>1100 人时</b>。</p>
+  <p style="margin-bottom:0"><span class="tag t-us">我们的办法</span>正确答案<b>不靠人标，靠会计恒等式由程序算出来</b>。
+  ⇒ <b>零人工标注</b>，边际成本约等于零（实测每题 0.35 毫秒）。</p>
+</div>
+
+<h2>2. 第二张图：我们做到哪一步了</h2>
+<p>看懂「补哪一格」之后，第二个问题自然是：<b>这件事现在做到哪一步了？</b>
+下面这张图从上往下四步：<b>造题 → 出答案 → 测判分器 → 看后果</b>。
+<span class="tag t-us">绿＝已完成</span><span class="tag t-key">黄＝进行中</span></p>
+
+<figure>
+  <div class="figbox"><img src="./figures/fig8-research-flow.svg" alt="Fig8 科研流程图 v5"></div>
+  <figcaption>Fig8 · 科研流程图（v5）。四步 + 闸门 + 实测落点 · <a href="./figures/fig8-research-flow.svg" target="_blank">新窗口打开原图</a></figcaption>
+</figure>
+
+<h3>本轮（v5）最重要的一件事：差点把钱打在退化数据上</h3>
+<p>我们原本宣称「会计域有 ≥4 档难度」。实测发现：<b>四个算子违反的规则集合完全一样</b>，
+于是从参照答案那一侧看过去，四档难度被<b>压成了一档</b>——缺的不是算子，是<b>核对规则</b>。</p>
+<p><span class="tag t-key">已修好</span>补齐 3 条规则 + 2 个算子，现在 <b>4/4 分离</b>；
+验收脚本 <code>run_f4_acceptance.py</code> 报 <b>PASS</b>：干净账套 0/600 误报、7/7 规则全部用上、6/6 两两可分。
+花的是约 3 小时和零 LLM 成本，换掉的是 <b>$8–12 打在退化数据上</b>的风险。</p>
+
+<h3>已经跑出来的实测结论（比说法更硬）</h3>
+<table>
+  <tr><th style="width:140px">结论</th><th>数字</th><th>为什么反直觉</th></tr>
+  <tr>
+    <td>闸门通过</td>
+    <td>flash 漏报 <b>0.500</b>（CI 0.423–0.577，n=160）<br>pro 漏报 <b>0.380</b>（CI 0.291–0.478，n=100）</td>
+    <td>两个区间都远高于跑前写死的 0.20 阈值 ⇒ 方向成立</td>
+  </tr>
+  <tr>
+    <td><b>更强的模型反而更危险</b></td>
+    <td>pro 判别力 <b>J = −0.180</b>（比瞎猜还糟）<br>flash 判别力 <b>J = +0.500</b>（正常）</td>
+    <td>买更强的判分器 ≠ 买到更好的训练信号</td>
+  </tr>
+  <tr>
+    <td>原因不是看不见，是乱报</td>
+    <td>pro 检测层漏报 0.494→0.070（变好）<br>归因层 0.012→0.333（变差）<br>误报率 0.000→<b>0.800</b></td>
+    <td>能力提升只买到「检测」，没买到「归因」</td>
+  </tr>
+  <tr>
+    <td>误报率才是杀手</td>
+    <td>误报率=0 时，漏报率涨到 100% 也<b>不翻转</b>训练方向</td>
+    <td>社区直觉以为是漏报害的，其实是误报在污染奖励</td>
+  </tr>
+  <tr>
+    <td>第三种失效：静默停摆</td>
+    <td>66–100% 的组答案为全同（σ=0）</td>
+    <td>GRPO 直接跳过这些组，<b>不报任何错</b>，训练悄悄停摆</td>
+  </tr>
+</table>
+
+<div class="lead">
+<b>诚实边界（必须一起读）：</b>pro 的误报率 0.800 只用了 <b>40 个干净样本</b>，区间 [0.652, 0.895] 太宽。
+取最不利的联合边界时，结论会从「训练方向翻转」变回「不翻转」——<b>这条结论目前还钉不死</b>。
+解法已算好：干净样本 40 → 120，约 <b>$2</b>。
+</div>
+
+<h2>3. 第三张图：接下来做什么</h2>
+<p>A0 是当前的主实验（4 档难度 × ≥6 个模型，$8–12）。但在投这笔钱之前，建议先花 $2 把上面那条钉不死的结论钉死。</p>
+
+<figure>
+  <div class="figbox"><img src="./figures/fig10-roadmap.svg" alt="Fig10 路线图"></div>
+  <figcaption>Fig10 · 路线图。<span class="tag t-key">黄＝建议先做</span><span class="tag t-todo">灰＝待做</span> · <a href="./figures/fig10-roadmap.svg" target="_blank">新窗口打开原图</a></figcaption>
+</figure>
+
+<p><b>还有一个待定的可选项 F5</b>：给「账外账」也补一条专属核对规则。倾向<b>先不补</b>——
+它不影响四档可区分性，等 A0 结果出来再定。</p>
+
+<h2>4. 术语小词典（遇到就回来查）</h2>
+<table>
+  <tr><th style="width:150px">词</th><th>一句话</th></tr>
+  <tr><td>oracle / 核对规则</td><td>判断账目对错的规则。现在有 <b>7 条</b>（表账一致 / 期末递推 / 会计恒等式 / 折旧政策 / 累计折旧 / 跨期 / 分类）。</td></tr>
+  <tr><td>DIC 差分隔离证书</td><td>「做手脚 <b>前</b> 与 <b>后</b> 之差」就是真值。⇒ 拿到正确答案的成本约等于零，<b>零人工标注</b>。</td></tr>
+  <tr><td>认定（审计认定）</td><td>四种错误类型：完整性 / 截止性 / 计价 / 分类列报。<b>四档难度就来自这四条</b>。</td></tr>
+  <tr><td>FNR 漏报率</td><td>有错没查出来。学科里它叫<b>检查风险</b>（PCAOB AS 1101）。</td></tr>
+  <tr><td>FPR 误报率</td><td>没错却报错。<b>真正污染奖励的是它</b>。</td></tr>
+  <tr><td>J 判别力</td><td><code>J = 1 − FPR − FNR</code>，就是 Youden's J（1947）。J=0 ⟺ 瞎猜；J&lt;0 叫 reversed discrimination。</td></tr>
+  <tr><td>arm（提示档位）</td><td>我们「帮判分器多少」的三档：A 原始账 / B 预先算好 / C 再给核查清单。<b>取最宽松的 C 是对自己不利的一侧</b>。</td></tr>
+  <tr><td>零方差退化</td><td>一组 rollout 答案全同（σ=0），没有梯度，训练停摆但<b>不报错</b>。</td></tr>
+</table>
+
+<h2>5. 最容易搞错的几件事</h2>
+<table>
+  <tr><th style="width:230px">误解</th><th>事实</th></tr>
+  <tr><td>ALE 和 ALE-Bench 是一家的</td><td>❌ 完全无关。Berkeley RDI vs Sakana×AtCoder</td></tr>
+  <tr><td>Harbor 是另一个 benchmark</td><td>❌ 它是 runner / 框架；benchmark 是 Terminal-Bench 2.0</td></tr>
+  <tr><td>我们让"埋雷"更真实</td><td>❌ 变异体有效性已被做透（87.98% vs 41.64%）</td></tr>
+  <tr><td>我们发现了"训练方向翻转"</td><td>❌ 定理已证。只能说：<b>实测到判别力跨过了 d′=0</b></td></tr>
+  <tr><td>四档难度我们早就有</td><td>⚠️ 算子层有，<b>参照层原被压平成一档</b>；F4 修复后才 4/4 分离</td></tr>
+</table>
+
+<h2>6. 读完之后，你能带走的一句话</h2>
+<div class="lead" style="font-size:17px">
+在 agentic data 的定义里，判分器 <code>v</code> 本来被标成 <b>「可选项」</b>；<br>
+我们做的事，就是把<b>可选项变成必测项</b>。
+</div>
+
+<footer>
+图：<code>figures/fig9-beginner-orientation.svg</code>（补哪一格）·
+<code>figures/fig8-research-flow.svg</code>（做到哪一步）·
+<code>figures/fig10-roadmap.svg</code>（接下来）。<br>
+来源文档：<a href="./29-学术规范与新手读图.md">29 · 学术规范与新手架构图导读</a> §7 ·
+<a href="./28-A0前置诊断与方案迭代v5.md">28 · A0 前置诊断与方案迭代 v5</a> ·
+<a href="./21-科研进展方案.md">21 · 科研进展方案</a> ·
+<a href="./20-S1实测报告.md">20 · S1 实测报告</a>。
+</footer>
+
+</div>
+</body>
+</html>

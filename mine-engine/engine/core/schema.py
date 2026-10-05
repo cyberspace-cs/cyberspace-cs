@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass
 
 @dataclass
 class Location:
-    """问题在埋雷版材料中的位置。"""
+    """问题在注入版材料中的位置。"""
 
     file: str
     function: str

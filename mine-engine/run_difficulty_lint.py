@@ -7,9 +7,9 @@
 
 检查项：
   1. 括号 / 花括号配平（插入位置算错会立刻破坏结构）
-  2. 诱饵依赖的符号都有声明（状态变量、modifier、事件）
-  3. 诱饵函数名不重复（刻度 >4 时模板循环复用，可能产生重名函数 -> 编译错）
-  4. 源码里不出现诱饵身份泄漏词
+  2. chaff依赖的符号都有声明（状态变量、modifier、事件）
+  3. chaff 函数名不重复（刻度 >4 时模板循环复用，可能产生重名函数 -> 编译错）
+  4. 源码里不出现chaff身份泄漏词
 
 用法：
   python run_difficulty_lint.py
@@ -33,9 +33,9 @@ from engine.operators.difficulty import (  # noqa: E402
     apply_difficulty,
 )
 
-# 诱饵身份泄漏词：出现即说明伪装失败
+# chaff身份泄漏词：出现即说明伪装失败
 LEAK_WORDS = ("decoy", "looks risky", "already guarded", "but is checked",
-              "owner-gated", "无害", "诱饵")
+              "owner-gated", "无害", "chaff")
 
 
 def strip_comments_strings(src: str) -> str:
@@ -85,23 +85,23 @@ def used_identifiers(src: str) -> set[str]:
 
 
 def check_decoy_deps(src: str, decoy_fns: list[str]) -> list[str]:
-    """诱饵依赖的符号（状态变量/修饰符）是否都有声明。"""
+    """chaff依赖的符号（状态变量/修饰符）是否都有声明。"""
     if not decoy_fns:
         return []
     declared = declared_symbols(src)
     errs = []
-    # 只检查诱饵函数体里出现的、且是我们已知依赖的符号
+    # 只检查chaff 函数体里出现的、且是我们已知依赖的符号
     known_deps = {"partnerShare", "riskCap", "operator", "owner", "onlyOwner",
                   "guardian", "caps", "balances"}
     for fn in decoy_fns:
         m = re.search(rf"function\s+{re.escape(fn)}\s*\([^)]*\)[^{{]*\{{(.*?)\n    \}}", src, re.S)
         if not m:
-            errs.append(f"找不到诱饵函数 {fn} 的函数体（插入可能被破坏）")
+            errs.append(f"找不到chaff 函数 {fn} 的函数体（插入可能被破坏）")
             continue
         body = m.group(1)
         for sym in re.findall(r"\b[A-Za-z_]\w*\b", body):
             if sym in known_deps and sym not in declared:
-                errs.append(f"诱饵 {fn} 使用了未声明的符号 `{sym}` -> 编译会失败")
+                errs.append(f"chaff {fn} 使用了未声明的符号 `{sym}` -> 编译会失败")
     return errs
 
 
@@ -118,7 +118,7 @@ def check_dup_functions(src: str) -> list[str]:
 
 def check_leak(src: str) -> list[str]:
     low = src.lower()
-    return [f"源码出现泄漏词 `{w}`：诱饵自曝身份，模型会直接跳过"
+    return [f"源码出现泄漏词 `{w}`：chaff自曝身份，模型会直接跳过"
             for w in LEAK_WORDS if w in low]
 
 
@@ -174,7 +174,7 @@ def main() -> int:
                 errs += check_leak(out)
             n_checks += 1
             flag = "OK " if not errs else "FAIL"
-            print(f"[{flag}] {sid:<14} 刻度{level}  诱饵={metrics['decoy_count']} "
+            print(f"[{flag}] {sid:<14} 刻度{level}  chaff={metrics['decoy_count']} "
                   f"伪装={int(bool(metrics['obfuscated']))} 跨函数={int(bool(metrics['cross_function']))}"
                   + ("" if not errs else "  <- " + "; ".join(errs)))
             for e in errs:

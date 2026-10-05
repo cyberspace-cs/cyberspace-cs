@@ -1,0 +1,69 @@
+diff --git a/research-skills-map/SKILL.md b/research-skills-map/SKILL.md
+index 2e2b342..3bfa135 100644
+--- a/research-skills-map/SKILL.md
++++ b/research-skills-map/SKILL.md
+@@ -26,8 +26,33 @@ license: MIT
+ | 6️⃣ 论文写作 | Paper Writer、Academic Paper |
+ | 7️⃣ 投稿返修 | Ref Verifier、Pre-Submission Reviewer、Nature Response |
+ 
++## ⚠️ 分类维度零：按「测量是否可信」质控（2026-10-05 补充）
++
++前 7 个环节都假设「实验数据是可信的」。但本项目在 S1 实测中**两次差点给出假结论**，
++且两次都不是被某个 skill 拦下的，是自己在代码里写了断言拦下的。因此补第 8 环节：
++
++| 失效类型 | 症状 | 拦截手段 |
++| --- | --- | --- |
++| 基础设施伪装成结论 | 思考链烧光 token → 空答案 → 分母只剩 1 → 报出「漏判率 0.000」 | 决策守卫：样本量/空答率不达标时返回 INCOMPLETE，不给方向性结论 |
++| 台子问题伪装成被测对象 | 题面口径有歧义 → 干净样本误报率 1.000 | 先证明题无歧义，再测模型能力 |
++| 重复计数灌水n | 分母被读了两遍 → 置信区间假性变窄 | 聚合前按 (arm, cond, seed) 去重 |
++| 抽样噪声当结论 | 单次调用的比例决定 go/no-go | 每题重复 ≥3 次取多数，并报告分歧率 |
++
++**判据要在跑之前写死**，否则一定会挑对自己有利的那个口径。
++
+ ## 分类维度二：按来源仓库
+ 
++>✅ **2026-10-05 已定位全部上游真实地址并完成安装（共 40 个 skill）。**
++
++| 上游仓库 | GitHub 地址 | 提供的 skill | 本机状态 |
++| --- | --- | --- | --- |
++| **Nature Skills** | `github.com/Yuan1z0825/nature-skills` | 20 个 `nature-*` | ✅ 全装（`nature-figure` 剥离 35MB demo 资产） |
++| **Supervisor-Skills** | `github.com/HKUSTDial/Supervisor-Skills` | 12 个 | ✅ 全装（`drawio-reconstruction` 剥离 13MB 资产） |
++| 本仓库自研 | `github.com/cyberspace-cs/clouds` | `idea-refine` / `charts` | ✅ 已装|
++
++**注意**：`nature-proposal-writer` 目录的 frontmatter `name` 是 `researchwrite`（上游故意的别名），
++不是错误，但按目录名断言会误报。
++
+ - **Nature Skills（7）**：Nature Academic Search / Nature Reader / Nature Paper Card / Nature Proposal Writer / Nature Figure / Ref Verifier / Nature Response
+ - **Supervisor-Skills（4）**：Idea Evaluator / Figure Designer / Paper Writer / Pre-Submission Reviewer
+ - **Academic Research Skills（2）**：Academic Pipeline / Academic Paper
+@@ -42,7 +67,30 @@ license: MIT
+ 1. **不要追求完美顺序**：科研不是线性流程，可按需跳跃使用各环节。
+ 2. **同类技能择优**：每个环节有 2–3 个可选 Skill，按"时间紧张度 + 严谨度要求"选择。
+ 3. **输出复用**：每个环节的输出（文献卡片、实验计划）可作为后续环节输入。
++4. **已全部安装**：40 个 skill 现装在 `~/.workbuddy/skills/`，含本仓库的 `idea-refine` / `charts`
++   与两个上游的 32 个。按项目阶段选：
++   - **做 benchmark/评测类论文** → `benchmark-paper-template`（五支柱框架 + gap 四项检验 + 投稿 checklist）★
++   - **评估 idea 值不值得做** → `idea-evaluator`（更高更快更强五维打分）
++   - **查文献** → `nature-academic-search`（PubMed/Crossref/ArXiv 多源）、`deep-research`
++   - **精读一篇论文** → `nature-paper-card`（01–16 节证据卡）
++   - **画论文图** → `nature-figure`（Nature 风格多面板）、`figure-designer`
++   - **写正文** → `paper-writer`（证据门控）、`intro-drafter`、`paper-polish`
++   - **投稿前** → `pre-submission-reviewer`（审稿人视角 + Critical/Major 分级）、`nature-ref-verifier`
++   - **返修** → `nature-response`、`rebuttal-guidance`
++   - **统计段** → `nature-statistics`（效应量/多重比较/图表一致性）
++   ★ 最高性价比：`benchmark-paper-template` 的 `gap-analysis.md` 会**用四项检验杀死大多数 gap 陈述**，
++   能提前挡掉"我觉得没人做过"这类判断失误。
+ 
+ ## 来源说明
+ 
+ 本分类整理自微信公众号《告别科研内耗！GPT-6 Astra skills 汇总带你跑通科研全流程》（2026-10-05）。文中 Skill 实际来自 Nature Skills / Supervisor-Skills / Academic Research Skills / USTC / ResearchStudio 等公开技能仓库，多为**通用科研方法学**工具，可跨学科使用。如需把新链接的科研 Skills 并入此地图，把链接交给 Agent 即可合并扩展。
++
++> ⚠️ **本仓库只收录「地图」，不收录地图上列的那些 Skill。**
++> `clouds` 里没有 `nature-figure` / `pre-submission-reviewer` 等目录，本报告也不含外链。
++> **2026-10-05 已解决**：上游地址见上方「分类维度二」表格，32 个已装到 `~/.workbuddy/skills/`。
++>
++> **安装时的两个坑（复用性教训）**：
++> 1. `git clone` 到项目内`.cache/` 可能**静默返回 exit 0 但不落盘**（Git Bash on Windows）。
++>    克隆到 `/tmp` 再搬，或先`ls -d` 确认目录真的出现，别信 exit code。
++> 2. `nature-academic-search/install.sh` 会改写 `~/.claude/settings.json` 和 `mcp.json`。
++>    只想装 skill 时**不要跑它**，手动 `cp -r skills/<name> ~/.workbuddy/skills/` 即可。

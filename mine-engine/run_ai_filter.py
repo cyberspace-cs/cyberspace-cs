@@ -1,7 +1,7 @@
 """AI Filter（HLE adversarial filtering 思路）：筛掉"太容易"的题。
 
 做法：对每道已落盘的样本，用一组"筛选模型"（默认便宜的 flash 级）各做一遍审计；
-  - 如果所有筛选模型都全对（真雷找全 + 零误报 + 诱饵没乱报）→ 标记 trivial（太易，SOTA 一眼看穿）
+  - 如果所有筛选模型都全对（真漏洞找全 + 零误报 + chaff没乱报）→ 标记 trivial（太易，SOTA 一眼看穿）
   - 如果至少一个筛选模型漏报/误报 → 标记 differentiating（有区分度，保留进正式 benchmark）
 
 不删除样本，只打标签写回 index.jsonl，并打印统计。下一步对 trivial 题加难（组合雷/干扰/Exploit）。
@@ -69,7 +69,7 @@ def main() -> None:
             sc = score_report(gt, report["findings"])
             model_scores[fm] = sc
 
-        # 全对判定：真雷找全(tp==n_gt, fn==0) 且 零误报(fp==0)
+        # 全对判定：真漏洞找全(tp==n_gt, fn==0) 且 零误报(fp==0)
         all_correct = all(
             sc["tp"] == n_gt and sc["fp"] == 0 and sc["fn"] == 0
             for sc in model_scores.values()

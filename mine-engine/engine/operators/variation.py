@@ -1,10 +1,10 @@
 """VariationOperator：LLM 语义保持改写（借鉴 DataFlow 的 PromptedGenerator）。
 
-对已埋雷的 planted 源码做浅层改写：改局部变量名 / 加注释 / 调整不影响语义的语句，
+对已注入漏洞的 planted 源码做浅层改写：改局部变量名 / 加注释 / 调整不影响语义的语句，
 但**保持合约名、函数签名、漏洞点行为不变**。变体产出后必须再过 Foundry 差分闸门，
 编译不过 / 破坏 happy-path / PoC 不再差分的变体会被自动丢弃。
 
-这是解决"确定性算子批量=同一份代码复制"的关键：一道埋雷题可自动长出多道语义不同、
+这是解决"确定性算子批量=同一份代码复制"的关键：一道注入漏洞题可自动长出多道语义不同、
 漏洞相同的变体，数据集才真正多样化。
 """
 
@@ -39,7 +39,7 @@ class VariationOperator(IssueOperator):
     def run(self, records):
         out = list(records)
         for rec in records:
-            if not rec.get("issues"):  # 诱饵不变体
+            if not rec.get("issues"):  # chaff 不变体
                 continue
             for i in range(self.k):
                 try:

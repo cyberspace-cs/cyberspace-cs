@@ -2,22 +2,22 @@
 
 设计原则（与 docs/10-action-plan.md 3.4 对齐）：
   - 旋钮是**纯文本/参数变换**，不改算子对外接口，现有调用方照跑；
-  - 诱饵密度 / 代码伪装 / 跨函数 / 改写强度 四个旋钮在**本机离线就能验证**（不需要 forge）；
-  - 雷数量（real_count）通过"1 个真雷 + 若干诱饵"体现，真多雷链式注入留作 forge 环境再扩。
+  - chaff 密度 / 代码伪装 / 跨函数 / 改写强度 四个旋钮在**本机离线就能验证**（不需要 forge）；
+  - 雷数量（real_count）通过"1 个真漏洞 + 若干 chaff"体现，真多雷链式注入留作 forge 环境再扩。
 
 两条踩过坑才写下来的硬规则（改这个文件前先读）：
-  1. **诱饵绝不能自曝身份**。函数名不能叫 `decoyXxx`，注释里不能出现
+  1. **chaff 绝不能自曝身份**。函数名不能叫 `decoyXxx`，注释里不能出现
      "decoy / safe / already guarded" 这类词。真实工程里攻击者不会给代码写批注
-     说明自己无害——一旦自曝，模型会直接跳过，诱饵的欺骗性归零，
+     说明自己无害——一旦自曝，模型会直接跳过，chaff 的欺骗性归零，
      难度旋钮就变成"只加长度不加难度"（实测 F1 反而会上升）。
-  2. **诱饵必须能编译**。插入的函数只能引用"保证存在"的状态变量；
+  2. **chaff 必须能编译**。插入的函数只能引用"保证存在"的状态变量；
      缺的声明要先补上（见 `ensure_state_decls`），否则 forge 一跑就炸，
      整批样本全废。
 
 对外只暴露：
   - `apply_difficulty(planted_source, knob) -> (new_source, metrics)`
   - `PRESETS`: 难度刻度 0..5 的预设档位
-  - `DECOY_FUNCTIONS`: 诱饵函数名清单（供统计"模型有没有踩雷"）
+  - `DECOY_FUNCTIONS`: chaff 函数名清单（供统计"模型有没有误报"）
 
 所有变换都做了防御：解析失败时原样返回，绝不悄悄产出坏代码。
 """
@@ -29,15 +29,15 @@ from dataclasses import dataclass
 from typing import Dict, List
 
 
-# ---- 诱饵模板：看着像漏洞，其实安全（专打"宁可错报"的模型） ----
+# ---- chaff模板：看着像漏洞，其实安全（专打"宁可错报"的模型） ----
 #
 # 每条 = (基础函数名, 依赖声明列表, 代码模板)。
-# 代码模板里用 `{fn}` 占位函数名：模板只有 4 条，但刻度 5 要插 6 个诱饵，
+# 代码模板里用 `{fn}` 占位函数名：模板只有 4 条，但刻度 5 要插 6 个chaff，
 # 直接循环复用会产出**同名函数重复定义**（Solidity 编译直接失败，整批样本全废）。
 # 所以插入时按轮次给函数名加区分后缀（payoutPartner / payoutPartner2 / ...），
 # 既避免重名，也更贴近真实项目里"同类逻辑有多个入口"的形态。
 #
-# ⚠️ 依赖声明也必须**按最终函数名去重**（不同诱饵可能依赖同一个状态变量）。
+# ⚠️ 依赖声明也必须**按最终函数名去重**（不同chaff可能依赖同一个状态变量）。
 _DECOY_TEMPLATES: List[tuple[str, List[str], str]] = [
     # ① 看着像重入：外部调用在最后、且状态已结算
     (
@@ -86,7 +86,7 @@ _DECOY_TEMPLATES: List[tuple[str, List[str], str]] = [
     ),
 ]
 
-# 诱饵**基础**函数名（实际插入时可能带 2/3 后缀去重，见 plan_decoys）
+# chaff**基础**函数名（实际插入时可能带 2/3 后缀去重，见 plan_decoys）
 # 保留这个常量是为了让调用方不必读模板就能知道"可能插入哪些函数"。
 DECOY_FUNCTIONS: List[str] = [
     "payoutPartner", "accrueTier", "setRiskCap", "maintenanceMode",
@@ -108,8 +108,8 @@ _OBFUSCATE_MAP = {
 class DifficultyKnob:
     """五个连续旋钮（0 刻度 = 最简单）。"""
 
-    real_count: int = 1          # 真雷数量（基础算子已埋 1 个；此处驱动诱饵"假雷"数）
-    decoy_count: int = 0         # 诱饵密度：插入几条"看着像漏洞其实没问题"的代码
+    real_count: int = 1          # 真漏洞数量（基础算子已埋 1 个；此处驱动chaff"假雷"数）
+    decoy_count: int = 0         # chaff 密度：插入几条"看着像漏洞其实没问题"的代码
     obfuscate: bool = False      # 代码伪装：局部变量改名
     cross_function: bool = False # 藏多深：把漏洞函数体包进内部 helper
     # ⚠️ 改写强度：**目前只是名义值，apply_difficulty 并不会真的调用 LLM 改写。**
@@ -128,7 +128,7 @@ class DifficultyKnob:
         }
 
 
-# 难度刻度 0..5（简单 -> 困难）。刻度越高：诱饵越多、开启伪装、藏进 helper、加改写。
+# 难度刻度 0..5（简单 -> 困难）。刻度越高：chaff越多、开启伪装、藏进 helper、加改写。
 PRESETS: Dict[int, DifficultyKnob] = {
     0: DifficultyKnob(real_count=1, decoy_count=0, obfuscate=False, cross_function=False, variation_k=0),
     1: DifficultyKnob(real_count=1, decoy_count=1, obfuscate=False, cross_function=False, variation_k=0),
@@ -140,7 +140,7 @@ PRESETS: Dict[int, DifficultyKnob] = {
 
 
 def ensure_state_decls(src: str, decls: List[str]) -> str:
-    """把缺失的状态变量/修饰符声明补到合约体开头，保证插入的诱饵能编译。
+    """把缺失的状态变量/修饰符声明补到合约体开头，保证插入的chaff能编译。
 
     幂等：已存在同名符号就跳过。只在能定位到 `contract X {` 时动手，否则原样返回。
     """
@@ -163,7 +163,7 @@ def ensure_state_decls(src: str, decls: List[str]) -> str:
 
 
 def plan_decoys(n: int) -> list[tuple[str, List[str], str]]:
-    """规划要插入的 n 个诱饵，返回 [(最终函数名, 依赖声明, 渲染后的代码)]。
+    """规划要插入的 n 个chaff，返回 [(最终函数名, 依赖声明, 渲染后的代码)]。
 
     函数名去重：模板只有 4 条，第 5 个开始按 `name2 / name3` 加后缀，
     否则同名函数重复定义在 Solidity 里是**编译错误**（刻度 5 要插 6 个，必踩）。
@@ -183,11 +183,11 @@ def plan_decoys(n: int) -> list[tuple[str, List[str], str]]:
 
 
 def add_decoys(src: str, n: int) -> str:
-    """在合约最后一个顶层 `}` 前插入 n 个诱饵函数（并补齐它们需要的状态声明）。"""
+    """在合约最后一个顶层 `}` 前插入 n 个chaff 函数（并补齐它们需要的状态声明）。"""
     if n <= 0:
         return src
     plan = plan_decoys(n)
-    # 依赖声明去重（不同诱饵可能依赖同一状态变量）
+    # 依赖声明去重（不同chaff可能依赖同一状态变量）
     decls, seen = [], set()
     for _, ds, _ in plan:
         for d in ds:
@@ -211,7 +211,7 @@ def obfuscate_identifiers(src: str) -> str:
     """保守地把几个明显是局部临时变量的名字改短。不影响函数/状态变量/合约名。"""
     out = src
     for orig, short in _OBFUSCATE_MAP.items():
-        # 词边界替换，避免误伤子串；但不能改掉我们刚插入的诱饵函数名
+        # 词边界替换，避免误伤子串；但不能改掉我们刚插入的chaff 函数名
         out = re.sub(rf"(?<![\w]){re.escape(orig)}\b", short, out)
     return out
 
@@ -258,7 +258,7 @@ def apply_difficulty(planted_source: str, knob: DifficultyKnob):
         "obfuscated": False,
         "cross_function": False,
         "variation_k": knob.variation_k,
-        # 新增：实际插入的诱饵函数名，供统计踩雷率
+        # 新增：实际插入的chaff 函数名，供统计误报率
         "decoy_functions": [],
     }
     out = planted_source

@@ -9,14 +9,14 @@
   1. 白卷（empty findings）——什么都不答
      普通题必须得 0 分。若 > 0，说明这道题"不答也给分"，是废题
      （典型原因：判分逻辑写错，或题干里直接写了答案）
-  2. 标准答案（golden，由埋雷时的 ground truth 自动构造）
+  2. 标准答案（golden，由注入漏洞时的 ground truth 自动构造）
      必须拿满分。若拿不到，说明判分器或标注有问题——
      这是最容易被忽略的一类 bug，它不会报错，只会让所有分数悄悄偏低
-  3. 反向白卷（诱饵题专用：故意乱报一个漏洞）
-     必须得 0 分。若 > 0，说明"瞎报也有分"，诱饵就白设了
+  3. 反向白卷（chaff 题专用：故意乱报一个漏洞）
+     必须得 0 分。若 > 0，说明"瞎报也有分"，chaff就白设了
 
-⚠️ 诱饵题的判据是**反过来的**：
-   诱饵题里没有雷，"什么都不报"才是正确答案，所以白卷必须**满分**、乱报必须**0 分**。
+⚠️ chaff 题的判据是**反过来的**：
+   chaff 题里没有雷，"什么都不报"才是正确答案，所以白卷必须**满分**、乱报必须**0 分**。
    （上一版方案在这里写反了，实测跑一遍才发现。见 docs/10-action-plan 第 8 章）
 
 用法：
@@ -58,7 +58,7 @@ def load_gt(ds: Path, sample_id: str) -> list:
 def golden_findings(gt: list) -> list:
     """把 ground truth 标注翻译成模型该输出的 findings 格式。
 
-    ground truth 是埋雷时自动生成的（含函数级行区间），
+    ground truth 是注入漏洞时自动生成的（含函数级行区间），
     这里取区间起点作为 line——判分器遵循"判分严格度不超过标注粒度"，
     所以报区间内任意一行都算命中。
     """
@@ -70,7 +70,7 @@ def golden_findings(gt: list) -> list:
             "function": loc.get("function", "") or g.get("function", ""),
             "line": loc.get("start_line", 0) or g.get("line", 0),
             "severity": g.get("severity", ""),
-            "evidence": "ground truth（由埋雷算子自动生成）",
+            "evidence": "ground truth（由注入算子自动生成）",
         })
     return out
 
@@ -118,7 +118,7 @@ def main() -> int:
 
         # 每项：(名称, 是否通过, 实测值, 是否作为硬性判据)
         if is_decoy:
-            # 诱饵题判据相反：白卷=满分（没乱报）、乱报=0 分
+            # chaff 题判据相反：白卷=满分（没乱报）、乱报=0 分
             checks = [
                 ("白卷应满分(没乱报)", empty["f1"] >= 1 - EPS, empty["f1"], True),
                 ("乱报应0分", reverse["f1"] <= EPS, reverse["f1"], True),
@@ -137,7 +137,7 @@ def main() -> int:
 
         rows.append({
             "sample_id": sid,
-            "kind": "诱饵" if is_decoy else "普通",
+            "kind": "chaff" if is_decoy else "普通",
             "n_gt": len(gt),
             "empty_f1": round(empty["f1"], 4),
             "golden_f1": round(golden["f1"], 4),
@@ -165,8 +165,8 @@ def main() -> int:
               f"{PASS if r['ok'] else FAIL}")
     print("=" * 92)
 
-    n_decoy = sum(1 for r in rows if r["kind"] == "诱饵")
-    print(f"诱饵题 {n_decoy} 个 · 普通题 {len(rows) - n_decoy} 个")
+    n_decoy = sum(1 for r in rows if r["kind"] == "chaff")
+    print(f"chaff 题 {n_decoy} 个 · 普通题 {len(rows) - n_decoy} 个")
 
     if bad:
         print(f"\n❌ {len(bad)} 道题不合格，必须从数据集里踢出去：{', '.join(bad)}")
@@ -180,7 +180,7 @@ def main() -> int:
 
     print("\n✅ 全部题目通过防伪检查")
     if n_decoy <= 1:
-        print("⚠️  但诱饵题只有 1 道：测不了误报率的审计评测是瘸腿的。"
+        print("⚠️  但 chaff 题只有 1 道：测不了误报率的审计评测是瘸腿的。"
               "建议至少补到 3–5 道（见 docs/10-action-plan 3.2）")
     return 0
 

@@ -3,7 +3,7 @@
 
 > 一个"动态对抗审计考试" benchmark：不只是考模型"认不认识漏洞"，而是考它能不能像真实审计师一样，端到端地完成审计项目——读代码、列风险、写 PoC 打穿、出报告。
 
-> **v0.3 审查记录**：修正了 ① 评分维度中"定位"当前未实现的标注；② deepseek-v4-pro 打穿率反直觉的原因（长代码截断，非推理问题）；③ 明确 Level 3 中模型不知道雷数、我们知道；④ 补充诱饵题在 Level 2 不测 Exploit 的说明；⑤ 明确组合雷的 recall 口径。
+> **v0.3 审查记录**：修正了 ① 评分维度中"定位"当前未实现的标注；② deepseek-v4-pro 打穿率反直觉的原因（长代码截断，非推理问题）；③ 明确 Level 3 中模型不知道雷数、我们知道；④ 补充chaff 题在 Level 2 不测 Exploit 的说明；⑤ 明确组合雷的 recall 口径。
 
 ---
 
@@ -18,7 +18,7 @@
 借鉴**真实审计职业考试**（中国审计署资格考试、CPA、CIA）的分级和评分逻辑，结合 **HLE 的 AI filter** 和 **EVMbench 的 Exploit 模式**，构建一个：
 - **三级递进**的考试（初/中/高），每级考察不同能力；
 - **四维评分**（识别/定位/利用/报告），不是一刀切对错；
-- **动态对抗**：题目由埋雷引擎自动生成，AI filter 自动筛掉太易题，Exploit PoC 程序化验证。
+- **动态对抗**：题目由注入漏洞引擎自动生成，AI filter 自动筛掉太易题，Exploit PoC 程序化验证。
 
 ---
 
@@ -28,31 +28,31 @@
 |---|---|---|---|---|---|
 | **Level 1 · 初级** | 初中级客观题 | 认识已知漏洞模式 | 单文件 ~30 行，单漏洞 | Detect：输出漏洞类型 JSON | ✅ 已完成 |
 | **Level 2 · 中级** | 客观题+简单案例 | 把漏洞真正打穿 | 单文件，模型写 Foundry PoC | Exploit：编译+运行 PoC，打穿才算对 | ✅ 已完成 |
-| **Level 3 · 高级** | 《高级审计实务》主观题 | 端到端审计项目 | 多文件仓库（多合约+继承+库），含诱饵+组合雷 | 完整流程：通读→列风险→写 PoC→出报告，四维评分 | 🔨 设计中 |
+| **Level 3 · 高级** | 《高级审计实务》主观题 | 端到端审计项目 | 多文件仓库（多合约+继承+库），含chaff bug+组合雷 | 完整流程：通读→列风险→写 PoC→出报告，四维评分 | 🔨 设计中 |
 
 ### Level 3 详细设计
 给模型一个**完整仓库**（不是单文件），包含：
 - 3-5 个合约（有继承、有库调用、有跨合约交互）
-- 埋 1-2 个真雷（可能组合：重入+权限缺失）
-- 埋 1-2 个诱饵（看起来危险但实际安全）
+- 埋 1-2 个真漏洞（可能组合：重入+权限缺失）
+- 埋 1-2 个chaff bug（看起来危险但实际安全）
 - **不告诉模型有几个雷、哪几个文件有雷**（我们知道，用于评分）
 
 要求模型输出一份**结构化审计报告**：
 ```json
 {
-  "findings": [
-    {
-      "vuln_type": "reentrancy",
-      "contract": "Vault.sol",
-      "function": "withdraw",
-      "line": 42,
-      "severity": "critical",
-      "evidence": "余额清零在 transfer 之后",
-      "poc": "test/Exploit.t.sol 内容",
-      "recommendation": " Checks-Effects-Interactions 模式"
-    }
-  ],
-  "false_positives_filtered": ["Station.sol: low-level call 但已 require"]
+ "findings": [
+ {
+ "vuln_type": "reentrancy",
+ "contract": "Vault.sol",
+ "function": "withdraw",
+ "line": 42,
+ "severity": "critical",
+ "evidence": "余额清零在 transfer 之后",
+ "poc": "test/Exploit.t.sol 内容",
+ "recommendation": " Checks-Effects-Interactions 模式"
+ }
+ ],
+ "false_positives_filtered": ["Station.sol: low-level call 但已 require"]
 }
 ```
 
@@ -62,35 +62,35 @@
 
 | 维度 | CPA 权重 | AuLE 指标 | 怎么算 | 状态 |
 |---|---|---|---|---|
-| **识别** | 20% | Recall：真雷找全了吗 | TP/(TP+FN) | ✅ Level 1 已实现 |
+| **识别** | 20% | Recall：真漏洞找全了吗 | TP/(TP+FN) | ✅ Level 1 已实现 |
 | **定位** | 35% | 准确率：报的合约/函数/行号对不对 | 类型对 + 函数名匹配 + 行号容差 ±5 行 | 🔨 Level 3 待实现（当前只判类型对不对） |
 | **利用** | 30% | PoC 真打穿了吗 | Foundry 跑模型写的 PoC，test pass 才算 | ✅ Level 2 已实现 |
-| **报告** | 15% | 严重程度分级对不对 + 诱饵没误报 | severity 分级匹配 + decoy FP=0 | 🔨 Level 3 待实现 |
+| **报告** | 15% | 严重程度分级对不对 + chaff bug没误报 | severity 分级匹配 + decoy FP=0 | 🔨 Level 3 待实现 |
 
 **总分 = 识别×0.2 + 定位×0.35 + 利用×0.3 + 报告×0.15**
 
-> 注：诱饵题（decoy）在 Level 2 不测 Exploit（因为没雷可打），只在 Level 1/3 的"报告"维度考误报控制。
+> 注：chaff 题（decoy）在 Level 2 不测 Exploit（因为没雷可打），只在 Level 1/3 的"报告"维度考误报控制。
 
 ---
 
-## 4. 出题侧（埋雷引擎 mine-engine）
+## 4. 出题侧（注入漏洞引擎 mine-engine）
 
 ### 4.1 DataFlow 范式
 Pipeline → Operator → Prompt：
-- **generation**：健康合约加载 → 埋雷算子（改一行）→ LLM 变体改写
+- **generation**：种子合约加载 → 注入算子（改一行）→ LLM 变体改写
 - **evaluation**：Foundry 差分闸门（编译/功能/PoC 差分）
 - **filtering**：去重 + AI filter（HLE 思路，便宜模型先做，全对的标太易）
 
 ### 4.2 已有算子
-| 算子 | SWC | 难度 | 健康合约 | 差分 PoC |
+| 算子 | SWC | 难度 | 种子合约 | 差分 PoC |
 |---|---|---|---|---|
 | ReentrancyInjector | SWC-107 | 2 | Vault.sol | VaultReentrancyPoC.t.sol |
 | AccessControlInjector | SWC-105 | 1 | Ownable.sol | OwnableAccessControlPoC.t.sol |
 | TxOriginInjector | SWC-115 | 2 | Wallet.sol | WalletTxOriginPoC.t.sol |
-| Station 诱饵 | — | 0 | Station.sol | （无雷，专打误报） |
+| Station chaff bug | — | 0 | Station.sol | （无雷，专打误报） |
 
 ### 4.3 已有的数据集
-7 样本 = 3 原始雷 + 3 LLM 变体 + 1 诱饵。
+7 样本 = 3 原始雷 + 3 LLM 变体 + 1 chaff bug。
 
 ---
 

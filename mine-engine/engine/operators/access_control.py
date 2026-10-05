@@ -1,4 +1,4 @@
-"""IssueOperator：访问控制缺失埋雷算子（SWC-105）。
+"""IssueOperator：访问控制缺失注入算子（SWC-105）。
 
 在健康 Ownable 源码上做一次确定性、最小化变换：
   1) 合约名 Ownable -> OwnablePlanted；

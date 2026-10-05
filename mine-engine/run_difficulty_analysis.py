@@ -58,10 +58,10 @@ def main() -> int:
     print("难度旋钮验收 · deepseek-flash · 3 样本 × 3 次/档 · v2 判分器")
     print("=" * 100)
     print(f"{'刻度':<5}{'n':<4}{'F1':<8}{'标准差':<8}{'精确率':<8}{'召回':<8}"
-          f"{'踩雷率':<8}{'耗时s':<8}{'tokens':<10}{'截断':<6}{'失败':<6}旋钮")
+          f"{'误报率':<8}{'耗时s':<8}{'tokens':<10}{'截断':<6}{'失败':<6}旋钮")
     print("-" * 100)
-    decoys_desc = {0: "原样", 1: "+1诱饵", 2: "+2诱饵", 3: "+3诱饵 伪装",
-                   4: "+4诱饵 伪装 跨函数", 5: "+6诱饵 伪装 跨函数"}
+    decoys_desc = {0: "原样", 1: "+1chaff", 2: "+2chaff", 3: "+3chaff 伪装",
+                   4: "+4chaff 伪装 跨函数", 5: "+6chaff 伪装 跨函数"}
     for lv in levels:
         r = rows[lv]
         tok = (r.get("tokens_in") or 0) + (r.get("tokens_out") or 0)
@@ -107,9 +107,9 @@ def main() -> int:
     walls = [rows[lv]["wall_ms_mean"] for lv in levels]
     sds = [rows[lv]["f1_std"] for lv in levels]
 
-    print(f"① 结构单调：诱饵 0→1→2→3→4→6、伪装刻度3起、跨函数刻度4起（离线 18 项体检全过）→ ✅")
+    print(f"① 结构单调：chaff 0→1→2→3→4→6、伪装刻度3起、跨函数刻度4起（离线 18 项体检全过）→ ✅")
     print(f"② 分离：F1 端点 {f1s[0]:.3f} → {f1s[-1]:.3f}（Δ={f1s[0] - f1s[-1]:+.3f}）；"
-          f"踩雷率 {dhs[0]:.2f} → {dhs[-1]:.2f}；耗时 {walls[0] / 1000:.1f}s → {walls[-1] / 1000:.1f}s")
+          f"误报率 {dhs[0]:.2f} → {dhs[-1]:.2f}；耗时 {walls[0] / 1000:.1f}s → {walls[-1] / 1000:.1f}s")
     non_mono = [lv for i, lv in enumerate(levels[1:], 1) if rows[lv]["f1_mean"] > rows[levels[i - 1]]["f1_mean"]]
     if f1s[0] - f1s[-1] > 0.05:
         print(f"   → ✅ 端点下降超过 0.05 阈值，旋钮确实在起作用")
@@ -117,7 +117,7 @@ def main() -> int:
         print(f"   → ❌ 端点降幅 {f1s[0] - f1s[-1]:.3f} 不足")
     if non_mono:
         print(f"   ⚠️ 非逐档单调，刻度 {non_mono} 出现回升。")
-        print(f"      注意刻度3 精确率=1.000：加诱饵反而没引出误报，")
+        print(f"      注意刻度3 精确率=1.000：加chaff反而没引出误报，")
         print(f"      拉高了均值 —— 这正是'均值掩盖单题效应'的典型例子（见分样本表）。")
     print(f"③ 稳定：各档标准差 {['%.2f' % x for x in sds]}，最大 {max(sds):.3f}")
     print(f"   → {'⚠️ 离散度偏大，正式结论需扩样本 + repeat≥5' if max(sds) > 0.25 else '✅ 可接受'}")
@@ -165,7 +165,7 @@ def compare_models() -> int:
     print("分离度验收：deepseek-flash vs deepseek-v4-pro 的难度曲线是否分开")
     print("=" * 96)
     print(f"{'刻度':<6}{'flash F1':>10}{'pro F1':>10}{'差(pro-flash)':>16}"
-          f"{'flash踩雷':>11}{'pro踩雷':>10}")
+          f"{'flash误报':>11}{'pro误报':>10}")
     print("-" * 96)
     diffs = []
     for lv in common:
@@ -327,7 +327,7 @@ def merge_split_levels(pattern: str) -> int:
             "rows": [row],
         }, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"✅ 刻度 {lv} 合并 {n} 次调用 -> {out_name}  F1={row['f1_mean']:.3f} "
-              f"踩雷={row['decoy_hits_mean']:.2f}")
+              f"误报={row['decoy_hits_mean']:.2f}")
     if not merged_out:
         return 1
     print("\n现在可以跑：python run_difficulty_analysis.py --compare")

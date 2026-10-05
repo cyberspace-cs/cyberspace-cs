@@ -1,4 +1,4 @@
-"""IssueOperator：重入埋雷算子。
+"""IssueOperator：重入注入算子。
 
 在健康 Vault 源码上做一次确定性、最小化的程序变换：
   1) 合约名 Vault -> VaultPlanted；

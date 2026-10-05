@@ -1,4 +1,4 @@
-"""Harbor 任务导出器：把埋雷样本导出成行业标准三元组。
+"""Harbor 任务导出器：把注入漏洞样本导出成行业标准三元组。
 
 Harbor（Terminal-Bench 团队出品）的任务格式刻意做得极简：
 
@@ -44,7 +44,7 @@ INSTRUCTION_DETECT = """你是资深 Solidity 安全审计专家。
 
 要求：
 1. 通读全部代码，找出**所有**安全漏洞。不要假设漏洞数量——可能 0 个、1 个或多个。
-2. 有些代码看起来危险但实际是安全的（诱饵），不要报。
+2. 有些代码看起来危险但实际是安全的（chaff），不要报。
 3. 把结论写入 `/workspace/report.json`，且**只写这一个文件**，格式严格如下：
 
 ```json
@@ -131,7 +131,8 @@ VERIFIER_PY = r'''#!/usr/bin/env python3
 
 零第三方依赖。输出：
   - stdout: 人类可读的判分明细
-  - /workspace/reward.txt: 主指标 f1（Harbor 聚合 reward 用）
+  - /logs/verifier/reward.txt: 主指标 f1（Harbor 官方约定，宿主挂载卷）
+  - /workspace/reward.txt: 同一值的镜像（本地自测用无该挂载卷）
 退出码：f1 >= PASS_THRESHOLD 时为 0，否则 1。
 """
 
@@ -145,6 +146,35 @@ TESTS_DIR = os.environ.get("TESTS_DIR", os.path.dirname(os.path.abspath(__file__
 WORKSPACE = os.environ.get("WORKSPACE_DIR", "/workspace")
 REPORT = os.path.join(WORKSPACE, "report.json")
 PASS_THRESHOLD = float(os.environ.get("PASS_THRESHOLD", "0.99"))
+
+# Harbor 约定：verifier 产出写/logs/verifier/（宿主挂载卷，容器内路径同名字面量）。
+# 该卷由 Harbor 在容器启动时挂载，agent 阶段不可见；`/workspace` 是 agent 的工作区，
+# 放这里会被 agent 看见并可能篡改，因此**不能**只写WORKSPACE。
+#
+# ⚠️ 早期版本只写/workspace/reward.txt，Harbor 聚合时读不到 ⇒ reward 恒为空。
+#    现按官方约定写 /logs/verifier/reward.txt，并镜像一份到 WORKSPACE
+#    以兼容本地自测（本地无该挂载卷）。
+LOG_DIR = os.environ.get("HARBOR_LOG_DIR", "/logs/verifier")
+REWARD_PRIMARY = os.path.join(LOG_DIR, "reward.txt")
+REWARD_MIRROR = os.path.join(WORKSPACE, "reward.txt")
+
+
+def _write_reward(value):
+    """写reward。
+
+    主路径是 Harbor 约定的 /logs/verifier/reward.txt（宿主挂载卷）；
+    同时镜像一份到 WORKSPACE，因为本地自测没有该挂载卷。
+    两处都失败时**不能抛异常** —— verifier 抛异常会导致退出码非 0，
+    被Harbor 记成"验证器自身崩了"而不是"agent 答错"，两种失败必须可区分。
+    """
+    for path in (REWARD_PRIMARY, REWARD_MIRROR):
+        try:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w") as fh:
+                fh.write(value)
+        except OSError:
+            continue
+
 
 SEVERITY_WEIGHT = {"critical": 1.0, "high": 0.8, "medium": 0.5, "low": 0.3}
 W_TYPE, W_LOC, W_SEV = 0.5, 0.3, 0.2
@@ -256,8 +286,7 @@ def main():
 
     if not os.path.exists(REPORT):
         print("FAIL: 未找到 /workspace/report.json")
-        with open(os.path.join(WORKSPACE, "reward.txt"), "w") as fh:
-            fh.write("0.0")
+        _write_reward("0.0")
         return 1
 
     try:
@@ -266,8 +295,7 @@ def main():
         findings = dedup(report.get("findings", []) if isinstance(report, dict) else [])
     except Exception as e:
         print(f"FAIL: report.json 解析失败: {e}")
-        with open(os.path.join(WORKSPACE, "reward.txt"), "w") as fh:
-            fh.write("0.0")
+        _write_reward("0.0")
         return 1
 
     pairs = []
@@ -310,7 +338,7 @@ def main():
                              for q, _, fi in matches if q < TP_THRESHOLD)
 
     if is_decoy:
-        # 诱饵样本：正确做法是输出空 findings
+        # chaff 样本：正确做法是输出空 findings
         recall = 1.0
         precision = 1.0 if not findings else 0.0
         f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
@@ -333,8 +361,7 @@ def main():
         "f1": round(f1, 4),
     }, ensure_ascii=False, indent=2))
 
-    with open(os.path.join(WORKSPACE, "reward.txt"), "w") as fh:
-        fh.write(f"{f1:.4f}")
+    _write_reward(f"{f1:.4f}")
 
     return 0 if f1 >= PASS_THRESHOLD else 1
 
@@ -485,7 +512,7 @@ def export_harbor_task(
     # --- task.toml ---
     vuln = row.get("vuln_type", "decoy")
     desc = (
-        f"审计 {row.get('contract', '?')}：{'无雷诱饵，考察误报' if vuln == 'decoy' else vuln}"
+        f"审计 {row.get('contract', '?')}：{'无漏洞chaff，考察误报' if vuln == 'decoy' else vuln}"
         f"（{mode} 模式）"
     )
     (task_dir / "task.toml").write_text(

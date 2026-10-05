@@ -1,8 +1,8 @@
-"""M3 批量生成：一条命令从健康体批量产出"差分验证通过"的审计样本。
+"""M3 批量生成：一条命令从种子程序批量产出"差分验证通过"的审计样本。
 
 流程（对齐清单 M3/M4/M5）：
-  遍历 (健康合约 × 埋雷算子) 组合
-    -> 算子生成埋雷版 + ground truth
+  遍历 (种子合约 × 注入算子) 组合
+    -> 算子生成注入版 + ground truth
     -> Foundry 差分验证（编译/ happy-path / PoC 差分）
     -> 通过则落盘 datasets/sample-XXXX/，失败记入 failures 并丢弃
   -> 写 datasets/index.jsonl（每行一个样本，便于切片/去重）
@@ -29,8 +29,8 @@ from engine.operators import default_registry
 from engine.validators import FoundryDiffValidator
 
 
-# (健康合约名, 健康源码相对 src/ 的路径, 漏洞类型, 默认难度 1-5)
-# vuln_type=None 表示“诱饵样本”：planted 就是干净合约，ground truth 无雷，专打误报。
+# (种子合约名, 健康源码相对 src/ 的路径, 漏洞类型, 默认难度 1-5)
+# vuln_type=None 表示“chaff 样本”：planted 就是clean 合约，ground truth 无漏洞，专打误报。
 COMBOS = [
     ("Vault", "Vault.sol", "reentrancy", 2),
     ("Ownable", "Ownable.sol", "access_control", 1),
@@ -77,12 +77,12 @@ def main() -> None:
     print(f"批量生成 · seed={SEED} · 组合数={len(COMBOS)}")
     print("=" * 72)
 
-    # 1) 生成（加载健康体 -> 对应算子埋雷；vuln_type=None 为诱饵，无雷）
+    # 1) 生成（加载种子程序 -> 对应算子注入漏洞；vuln_type=None 为chaff，无漏洞）
     raw = []
     for i, (contract, rel, vtype, difficulty) in enumerate(COMBOS):
         loaded = generator.run([{"contract_name": contract, "clean_rel_path": rel}])
         if vtype is None:
-            # 诱饵：planted 就是干净合约，ground truth 为空，无需差分验证
+            # chaff：planted 就是clean 合约，ground truth 为空，无需差分验证
             rec = loaded[0]
             sample_id = f"sample-{i + 1:04d}"
             rec.update(
@@ -104,7 +104,7 @@ def main() -> None:
             rec["difficulty"] = difficulty
         raw.extend(records)
 
-    # 2) 差分验证（只对有雷样本；诱饵已直接 valid）
+    # 2) 差分验证（只对有雷样本；chaff已直接 valid）
     to_validate = [r for r in raw if r["issues"]]
     validated_map = {r["sample_id"]: r for r in validator.run(to_validate)}
     for idx, rec in enumerate(raw):

@@ -1,4 +1,4 @@
-"""算子注册中心：把每个埋雷算子的“类型元数据 + 构造方式”登记起来。
+"""算子注册中心：把每个注入算子的“类型元数据 + 构造方式”登记起来。
 
 这是从“单算子脚本”升级为“可扩展、可批量生成引擎”的关键：
 新增一个漏洞算子，只需实现 IssueOperator 并在此 register，
@@ -20,7 +20,7 @@ class OperatorSpec:
     vuln_type: str
     swc: str
     severity: str
-    target_contract: str       # 该算子作用于哪个健康合约
+    target_contract: str       # 该算子作用于哪个种子合约
     injector_cls: type         # IssueOperator 子类
     default_difficulty: int
 

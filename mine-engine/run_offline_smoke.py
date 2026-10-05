@@ -112,25 +112,25 @@ def main() -> int:
     pe, em = summary["fake-perfect"], summary["fake-empty"]
     check("fake-perfect 至少做对一部分题（solved>0）", pe["solved"] > 0,
           f"solved={pe['solved']}/{pe['n_tasks']}")
-    # ⚠️ 注意：fake-empty 什么都不报，但在**诱饵题**上这恰恰是正确答案（F1=1.0）。
-    # 所以它 solved=1 而不是 0 —— 这不是 bug，是诱饵题判分正确的证据。
-    check("fake-empty 只在诱饵题上得分（其余全漏报）", em["solved"] == 1,
-          f"solved={em['solved']}/{em['n_tasks']}（唯一答对的是 sample-0004 诱饵题）")
+    # ⚠️ 注意：fake-empty 什么都不报，但在**chaff 题**上这恰恰是正确答案（F1=1.0）。
+    # 所以它 solved=1 而不是 0 —— 这不是 bug，是chaff 题判分正确的证据。
+    check("fake-empty 只在chaff 题上得分（其余全漏报）", em["solved"] == 1,
+          f"solved={em['solved']}/{em['n_tasks']}（唯一答对的是 sample-0004 chaff 题）")
     check("做对题时 cost_per_solved = 总成本 ÷ 成功数",
           pe["cost_per_solved_usd"] is not None
           and abs(pe["cost_per_solved_usd"] - pe["cost_usd"] / pe["solved"]) < 1e-6,
           f"{pe['cost_usd']} ÷ {pe['solved']} = {pe['cost_per_solved_usd']}")
 
-    # ---- 第二轮：只跑非诱饵题，制造真正的 solved=0，验证不除零 --------------
+    # ---- 第二轮：只跑非chaff 题，制造真正的 solved=0，验证不除零 --------------
     print("\n" + "-" * 78)
-    print("第二轮：只跑非诱饵题（fake-empty 应该一道都做不对）")
+    print("第二轮：只跑非chaff 题（fake-empty 应该一道都做不对）")
     print("-" * 78)
     sys.argv = ["run_benchmark.py", "--out", "results_offline_smoke2.json",
                 "--only", "sample-0001,sample-0002,sample-0003"]
     run_benchmark.main()
     data2 = json.loads((ROOT / "results_offline_smoke2.json").read_text(encoding="utf-8"))
     em2 = {r["model"]: r for r in data2["summary"]}["fake-empty"]
-    check("纯非诱饵题上 fake-empty solved=0", em2["solved"] == 0,
+    check("纯非chaff 题上 fake-empty solved=0", em2["solved"] == 0,
           f"solved={em2['solved']}/{em2['n_tasks']}")
     check("solved=0 时 cost_per_solved 为 None（不能除零）",
           em2["cost_per_solved_usd"] is None, f"={em2['cost_per_solved_usd']}")

@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1160.098 1403.5819999999999" width="1160.098" height="1403.5819999999999" style="--bg:#ffffff;--fg:#1f2328;--line:#d1d9e0;--accent:#0969da;--muted:#59636e;background:var(--bg)">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+  <marker id="arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+    <polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+</defs>
+<g class="subgraph" data-id="L1" data-label="第 1 步 · 造题">
+  <rect x="574.641" y="141.8" width="0" height="0" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="574.641" y="141.8" width="0" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="586.641" y="155.8" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">第 1 步 · 造题</text>
+</g>
+<g class="subgraph" data-id="L2" data-label="第 2 步 · 出答案（不用人标）">
+  <rect x="574.641" y="189.8" width="0" height="0" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="574.641" y="189.8" width="0" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="586.641" y="203.8" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">第 2 步 · 出答案（不用人标）</text>
+</g>
+<g class="subgraph" data-id="L3" data-label="第 3 步 · 测判分器">
+  <rect x="917.43" y="328.5" width="0" height="0" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="917.43" y="328.5" width="0" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="929.43" y="342.5" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">第 3 步 · 测判分器</text>
+</g>
+<polyline class="edge" data-from="READ" data-to="L1" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="574.641,93.80000000000001 574.641,141.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="L1" data-to="L2" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="574.641,141.8 574.641,189.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="B2" data-to="FIX" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="917.4299999999998,187.15000000000003 917.43,218.25" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="FIX" data-to="L3" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="917.43,272.04999999999995 917.43,328.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="L3" data-to="G1" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="917.43,328.5 917.43,376.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="G1" data-to="OUT2" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="不通过" points="870.6233333333333,610.5333333333333 870.6233333333332,727.1400000000001 845.7755,727.1400000000001 845.7755,807.44" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="G1" data-to="R1" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="通过 GO" points="964.2366666666667,610.5333333333332 964.2366666666666,693.34 989.0844999999999,693.34 989.0844999999999,773.64" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="R1" data-to="R2" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="989.0844999999999,844.34 989.0844999999999,892.34" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="R2" data-to="R3" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="989.0844999999999,963.0400000000001 989.0844999999999,1011.0400000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="R3" data-to="R4" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="989.0844999999999,1064.8400000000001 989.0844999999999,1112.84" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="R4" data-to="A0" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="989.0844999999999,1166.6399999999999 989.0844999999999,1214.6399999999999" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="A1" data-to="A2" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="118.773,93.80000000000001 118.773,133.35000000000002" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="B1" data-to="B2" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="917.43,76.9 917.4299999999998,133.35000000000002" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="C1" data-to="C2" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="296.31899999999996,76.9 296.31899999999996,133.35000000000002" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="C2" data-to="C3" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="296.31899999999996,170.25000000000003 296.31899999999996,218.25" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<g class="edge-label" data-from="G1" data-to="OUT2" data-label="不通过">
+  <rect x="818.7755" y="734.1400000000001" width="53.29" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="845.4205" y="749.2900000000001" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">不通过</text>
+</g>
+<g class="edge-label" data-from="G1" data-to="R1" data-label="通过 GO">
+  <rect x="960.0844999999999" y="700.34" width="57.448" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="988.8085" y="715.49" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">通过 GO</text>
+</g>
+<g class="node" data-id="READ" data-label="从上往下四步：造题 → 出答案 → 测判分器 → 看后果
+绿＝已完成　黄＝进行中" data-shape="stadium">
+  <rect x="395.092" y="40" width="359.09799999999996" height="53.800000000000004" rx="26.900000000000002" ry="26.900000000000002" fill="#fffde7" stroke="#fbc02d" stroke-width="1px" />
+  <text x="574.641" y="66.9" text-anchor="middle" font-size="13" font-weight="500" fill="#795548"><tspan x="574.641" dy="-3.9000000000000012">从上往下四步：造题 → 出答案 → 测判分器 → 看后果</tspan><tspan x="574.641" dy="16.900000000000002">绿＝已完成　黄＝进行中</tspan></text>
+</g>
+<g class="node" data-id="A1" data-label="程序生成
+干净账套" data-shape="rectangle">
+  <rect x="68.158" y="40" width="101.22999999999999" height="53.800000000000004" rx="0" ry="0" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2px" />
+  <text x="118.773" y="66.9" text-anchor="middle" font-size="13" font-weight="500" fill="#1b5e20"><tspan x="118.773" dy="-3.9000000000000012">程序生成</tspan><tspan x="118.773" dy="16.900000000000002">干净账套</tspan></text>
+</g>
+<g class="node" data-id="A2" data-label="6 个做手脚的算子
+对应 4 条审计认定" data-shape="rectangle">
+  <rect x="40" y="133.35000000000002" width="157.546" height="53.800000000000004" rx="0" ry="0" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2px" />
+  <text x="118.773" y="160.25000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="#1b5e20"><tspan x="118.773" dy="-3.9000000000000012">6 个做手脚的算子</tspan><tspan x="118.773" dy="16.900000000000002">对应 4 条审计认定</tspan></text>
+</g>
+<g class="node" data-id="B1" data-label="7 条核对规则" data-shape="rectangle">
+  <rect x="854.5885" y="40" width="125.68299999999999" height="36.900000000000006" rx="0" ry="0" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2px" />
+  <text x="917.43" y="58.45" text-anchor="middle" font-size="13" font-weight="500" fill="#1b5e20" dy="4.55">7 条核对规则</text>
+</g>
+<g class="node" data-id="B2" data-label="注入前后之差
+＝ 正确答案" data-shape="rectangle">
+  <rect x="851.9949999999999" y="133.35000000000002" width="130.87" height="53.800000000000004" rx="0" ry="0" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2px" />
+  <text x="917.4299999999998" y="160.25000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="#1b5e20"><tspan x="917.4299999999998" dy="-3.9000000000000012">注入前后之差</tspan><tspan x="917.4299999999998" dy="16.900000000000002">＝ 正确答案</tspan></text>
+</g>
+<g class="node" data-id="FIX" data-label="v5 修的：四档难度曾被压成一档
+现 4/4 分离，验收 PASS（0/600 误报）" data-shape="rectangle">
+  <rect x="774.1899999999999" y="218.25" width="286.47999999999996" height="53.800000000000004" rx="0" ry="0" fill="#e1f5fe" stroke="#0277bd" stroke-width="2px" />
+  <text x="917.43" y="245.15" text-anchor="middle" font-size="13" font-weight="500" fill="#01579b"><tspan x="917.43" dy="-3.9000000000000012">v5 修的：四档难度曾被压成一档</tspan><tspan x="917.43" dy="16.900000000000002">现 4/4 分离，验收 PASS（0/600 误报）</tspan></text>
+</g>
+<g class="node" data-id="C1" data-label="干净账 → 误报率" data-shape="rectangle">
+  <rect x="224.956" y="40" width="142.726" height="36.900000000000006" rx="0" ry="0" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2px" />
+  <text x="296.31899999999996" y="58.45" text-anchor="middle" font-size="13" font-weight="500" fill="#1b5e20" dy="4.55">干净账 → 误报率</text>
+</g>
+<g class="node" data-id="C2" data-label="做过手脚 → 漏报率" data-shape="rectangle">
+  <rect x="217.546" y="133.35000000000002" width="157.546" height="36.900000000000006" rx="0" ry="0" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2px" />
+  <text x="296.31899999999996" y="151.8" text-anchor="middle" font-size="13" font-weight="500" fill="#1b5e20" dy="4.55">做过手脚 → 漏报率</text>
+</g>
+<g class="node" data-id="C3" data-label="J = 1 − 误报 − 漏报" data-shape="rectangle">
+  <rect x="221.992" y="218.25" width="148.654" height="36.900000000000006" rx="0" ry="0" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2px" />
+  <text x="296.31899999999996" y="236.7" text-anchor="middle" font-size="13" font-weight="500" fill="#1b5e20" dy="4.55">J = 1 − 误报 − 漏报</text>
+</g>
+<g class="node" data-id="G1" data-label="闸门：最宽松档下漏报率 ≥ 0.20？
+判据跑之前写死" data-shape="diamond">
+  <polygon points="917.43,376.5 1057.85,516.92 917.43,657.3399999999999 777.01,516.92" fill="#fce4ec" stroke="#c2185b" stroke-width="3px" />
+  <text x="917.43" y="516.92" text-anchor="middle" font-size="13" font-weight="500" fill="#880e4f"><tspan x="917.43" dy="-3.9000000000000012">闸门：最宽松档下漏报率 ≥ 0.20？</tspan><tspan x="917.43" dy="16.900000000000002">判据跑之前写死</tspan></text>
+</g>
+<g class="node" data-id="OUT2" data-label="换方向" data-shape="stadium">
+  <rect x="802.5704999999999" y="807.44" width="86.41" height="36.900000000000006" rx="18.450000000000003" ry="18.450000000000003" fill="#fff8e1" stroke="#f9a825" stroke-width="2px" />
+  <text x="845.7755" y="825.8900000000001" text-anchor="middle" font-size="13" font-weight="500" fill="#6d4c41" dy="4.55">换方向</text>
+</g>
+<g class="node" data-id="R1" data-label="flash 漏报 0.500
+pro　 漏报 0.380
+都远高于 0.20" data-shape="rectangle">
+  <rect x="916.9804999999999" y="773.64" width="144.208" height="70.7" rx="0" ry="0" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2px" />
+  <text x="989.0844999999999" y="808.99" text-anchor="middle" font-size="13" font-weight="500" fill="#1b5e20"><tspan x="989.0844999999999" dy="-12.350000000000001">flash 漏报 0.500</tspan><tspan x="989.0844999999999" dy="16.900000000000002">pro　 漏报 0.380</tspan><tspan x="989.0844999999999" dy="16.900000000000002">都远高于 0.20</tspan></text>
+</g>
+<g class="node" data-id="R2" data-label="更强的模型反而更危险
+pro J = −0.180
+flash J = +0.500" data-shape="rectangle">
+  <rect x="894.0094999999999" y="892.34" width="190.14999999999998" height="70.7" rx="0" ry="0" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2px" />
+  <text x="989.0844999999999" y="927.69" text-anchor="middle" font-size="13" font-weight="500" fill="#4a148c"><tspan x="989.0844999999999" dy="-12.350000000000001">更强的模型反而更危险</tspan><tspan x="989.0844999999999" dy="16.900000000000002">pro J = −0.180</tspan><tspan x="989.0844999999999" dy="16.900000000000002">flash J = +0.500</tspan></text>
+</g>
+<g class="node" data-id="R3" data-label="原因不是看不见，是乱报
+pro 误报率 0.800" data-shape="rectangle">
+  <rect x="886.5994999999999" y="1011.0400000000001" width="204.96999999999997" height="53.800000000000004" rx="0" ry="0" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2px" />
+  <text x="989.0844999999999" y="1037.94" text-anchor="middle" font-size="13" font-weight="500" fill="#4a148c"><tspan x="989.0844999999999" dy="-3.9000000000000012">原因不是看不见，是乱报</tspan><tspan x="989.0844999999999" dy="16.900000000000002">pro 误报率 0.800</tspan></text>
+</g>
+<g class="node" data-id="R4" data-label="诚实边界：pro 只有 40 个干净样本
+补到 120 个即可钉死（约 $2）" data-shape="rectangle">
+  <rect x="858.0709999999999" y="1112.84" width="262.027" height="53.800000000000004" rx="0" ry="0" fill="#fff8e1" stroke="#f9a825" stroke-width="2px" />
+  <text x="989.0844999999999" y="1139.74" text-anchor="middle" font-size="13" font-weight="500" fill="#6d4c41"><tspan x="989.0844999999999" dy="-3.9000000000000012">诚实边界：pro 只有 40 个干净样本</tspan><tspan x="989.0844999999999" dy="16.900000000000002">补到 120 个即可钉死（约 $2）</tspan></text>
+</g>
+<g class="node" data-id="A0" data-label="A0 主实验
+4 档 × ≥6 模型
+成本 $8–12" data-shape="diamond">
+  <polygon points="989.0844999999999,1214.6399999999999 1063.5555,1289.1109999999999 989.0844999999999,1363.5819999999999 914.6134999999999,1289.1109999999999" fill="#fce4ec" stroke="#c2185b" stroke-width="3px" />
+  <text x="989.0844999999999" y="1289.1109999999999" text-anchor="middle" font-size="13" font-weight="500" fill="#880e4f"><tspan x="989.0844999999999" dy="-12.350000000000001">A0 主实验</tspan><tspan x="989.0844999999999" dy="16.900000000000002">4 档 × ≥6 模型</tspan><tspan x="989.0844999999999" dy="16.900000000000002">成本 $8–12</tspan></text>
+</g>
+</svg>

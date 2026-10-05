@@ -1,0 +1,34 @@
+flowchart TB
+    classDef who fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1
+    classDef gap fill:#ffebee,stroke:#e53935,stroke-width:3px,color:#b71c1c
+    classDef us fill:#e8f5e9,stroke:#2e7d32,stroke-width:3px,color:#1b5e20
+    classDef plain fill:#ffffff,stroke:#78909c,stroke-width:2px,color:#37474f
+    classDef key fill:#fff8e1,stroke:#f9a825,stroke-width:2px,color:#6d4c41
+
+    S(["AI 评测就像一场考试<br/>三件事里，有一件<b>没人负责</b>"]):::key
+
+    S --> T
+
+    subgraph T["一场考试的三件事"]
+        direction LR
+        A["① 造题<br/>ALE 在管"]:::who
+        B["② 判分<br/>Harbor 在管"]:::who
+        C["③ 考务<br/>Harbor 在管"]:::who
+        A --> B --> C
+    end
+
+    B --> Q{"判卷老师自己看错了<br/>这件事谁管？"}:::gap
+    Q --> N["<b>没人管。</b>"]:::gap
+    N --> U["👉 我们就在这一格"]:::us
+
+    U --> H["怎么测？只问它两次"]:::key
+
+    H --> P2["给它一份<b>干净</b>的账<br/>它却报错 ⇒ 误报"]:::plain
+    H --> P3["给它一份<b>做了手脚</b>的账<br/>它没查出来 ⇒ 漏报"]:::plain
+
+    P2 --> J["判别力 J = 1 − 误报 − 漏报<br/>J = 0 等于瞎猜<br/>J &lt; 0 比瞎猜还糟"]:::key
+    P3 --> J
+
+    J --> W["要知道它判错没有，<br/>就得先知道正确答案。<br/>我们的答案由程序算出<br/>⇒ <b>零人工标注</b>"]:::us
+
+    W --> E(["判分器本来是『可选项』<br/>我们把它变成『必测项』"]):::us

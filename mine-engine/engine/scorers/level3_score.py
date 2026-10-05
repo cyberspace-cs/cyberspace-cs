@@ -1,10 +1,10 @@
 """Level 3 四维评分器：识别 / 定位 / 利用 / 报告。
 
 权重（对标 CPA 综合阶段）：
-- 识别 20%：recall，真雷找全了吗
+- 识别 20%：recall，真漏洞找全了吗
 - 定位 35%：报的 contract+function 对不对
 - 利用 30%：有没有给出 PoC 思路（poc 字段非空=0.5，完整=1.0）
-- 报告 15%：severity 对不对 + 诱饵没误报
+- 报告 15%：severity 对不对 + chaff没误报
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ _TYPE_ALIASES = {
     "delegatecall": ["delegatecall"],
 }
 
-# 地面真值：StakingVaultPlanted 的三个雷 + 三个诱饵
+# 地面真值：StakingVaultPlanted 的三个雷 + 三个chaff
 GROUND_TRUTH = [
     {
         "vuln_type": "reentrancy",
@@ -45,7 +45,7 @@ GROUND_TRUTH = [
     },
 ]
 
-# 诱饵：报了这些就算误报
+# chaff：报了这些就算误报
 DECOYS = [
     {"contract": "StakingVaultPlanted", "function": "sweep"},
     {"contract": "StakingVaultPlanted", "function": "emergencyWithdraw"},
@@ -111,7 +111,7 @@ def score_level3(findings: list) -> dict:
                 exploit_score_sum += 1.0 if len(fpoc) > 30 else 0.5
             break
 
-    # 诱饵误报数
+    # chaff误报数
     fp_decoy = 0
     for f in findings:
         fc = _tokens(f.get("contract", ""))
@@ -122,7 +122,7 @@ def score_level3(findings: list) -> dict:
             if bool(fc & dc) and bool(ff & df):
                 fp_decoy += 1
 
-    # 非诱饵的误报（报了不存在的雷）
+    # 非chaff 的误报（报了不存在的雷）
     tp_total = tp_recall
     fp_random = max(0, len(findings) - tp_total - fp_decoy)
 
@@ -137,7 +137,7 @@ def score_level3(findings: list) -> dict:
     # 利用分：poc 平均分 / n_gt
     exploit_score = exploit_score_sum / n_gt if n_gt else 1.0
 
-    # 报告分：severity 命中 / 识别命中 * 0.5 + 诱饵没误报 * 0.5
+    # 报告分：severity 命中 / 识别命中 * 0.5 + chaff没误报 * 0.5
     sev_score = tp_sev / tp_recall if tp_recall else 0.0
     decoy_score = 1.0 if fp_decoy == 0 else max(0.0, 1.0 - fp_decoy * 0.5)
     report_score = sev_score * 0.5 + decoy_score * 0.5

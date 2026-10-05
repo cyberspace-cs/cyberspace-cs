@@ -1,3 +1,23 @@
 
 # 本地工作记忆（不进仓库）
 .workbuddy/
+.workbuddy-ai/
+
+# 第三方克隆的 skills 缓存（含自己的 .git 与 LICENSE，不可入仓）
+.cache/
+
+# Python 编译产物
+__pycache__/
+*.py[cod]
+*.pyc.tmp
+*.tmp
+
+# 本地实验环境与密钥
+.env
+.env.*
+prices.json
+*.key
+*.pem
+
+# 运行期大产物（原始逐条记录默认不入仓，结论表入仓）
+mine-engine/results_*_raw.jsonl

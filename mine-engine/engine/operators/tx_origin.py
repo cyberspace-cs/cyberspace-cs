@@ -1,4 +1,4 @@
-"""TxOriginInjector：tx.origin 授权埋雷算子（SWC-115）。
+"""TxOriginInjector：tx.origin 授权注入算子（SWC-115）。
 
 在健康 Wallet 源码上做确定性变换：
   1) contract 名 Wallet -> WalletPlanted；

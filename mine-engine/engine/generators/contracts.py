@@ -1,4 +1,4 @@
-"""ArtifactGenerator：加载健康合约作为埋雷基准体。"""
+"""ArtifactGenerator：加载种子合约作为注入漏洞基准体。"""
 
 from pathlib import Path
 

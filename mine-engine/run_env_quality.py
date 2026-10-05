@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""环境四维体检：一键检查埋雷引擎产出的题池是否健康。
+"""环境四维体检：一键检查注入漏洞引擎产出的题池是否健康。
 
 用法
 ----
@@ -68,7 +68,7 @@ def load_tasks(root: str = DATASETS) -> list:
             "severities": sev,
             # meta 里 difficulty 是 1..5 档，difficulty_histogram 会自动归一化
             "difficulty": (issues[0].get("difficulty") if issues else None),
-            "decoy": not bool(types),   # 无 ground truth = 诱饵题（正确做法是空报告）
+            "decoy": not bool(types),   # 无 ground truth = chaff 题（正确做法是空报告）
         })
     return tasks
 

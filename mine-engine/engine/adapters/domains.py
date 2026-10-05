@@ -22,11 +22,11 @@ from typing import Dict, List, Tuple
 
 @dataclass
 class OperatorSpecLite:
-    """赛道内的一个埋雷算子（设计阶段的登记项）。"""
+    """赛道内的一个注入算子（设计阶段的登记项）。"""
 
     op_id: str
     name_cn: str
-    method: str          # 埋法：健康体 -> 埋雷体 的具体变换
+    method: str          # 埋法：种子程序 -> 注入漏洞体 的具体变换
     signal: str          # 差分信号：验证器靠什么发现它
 
 
@@ -38,7 +38,7 @@ class AuditDomainSpec:
     name_cn: str
     name_en: str
     hardness: str            # L1..L4，验证器硬度阶梯（见 docs/05-ideas.md I2）
-    artifact: str            # 健康体是什么
+    artifact: str            # 种子程序是什么
     operators: List[OperatorSpecLite] = field(default_factory=list)
     validator: str = ""      # 验证器怎么证明（闸门描述）
     data_sources: List[str] = field(default_factory=list)
@@ -85,7 +85,7 @@ GOV_AUDIT = AuditDomainSpec(
     ],
     validator=("双闸门：A 资金流勾稽（预算指标数=下达数=拨付数=支出数=决算数，"
                "借贷平衡）；B 法规条款命中（违规事实 ↔ 公开法条库）。"
-               "健康版全绿且零命中；埋雷版恰好命中预期的那一条（不多不少）。"),
+               "健康版全绿且零命中；注入版恰好命中预期的那一条（不多不少）。"),
     data_sources=[
         "审计署《审计结果公告》（公开，违规类型与表述语料）",
         "部门预算 / 决算公开数据（账套结构与金额分布先验）",
@@ -95,7 +95,7 @@ GOV_AUDIT = AuditDomainSpec(
     ],
     compliance="绝不直接把真实审计数据做成公开数据集。照 FinancialAuditBench 路径："
                "只从真实数据提取差分隐私聚合统计作为合成器先验，产出全部合成。",
-    mvp="GovAudit-Mini：1 个合成部门 × 1 年度 × 3 类算子 × 10 seed = 30 题 + 10 诱饵",
+    mvp="GovAudit-Mini：1 个合成部门 × 1 年度 × 3 类算子 × 10 seed = 30 题 + 10 chaff",
     status="planned",
 )
 
@@ -147,7 +147,7 @@ CORP_AUDIT = AuditDomainSpec(
         "⚠️ 企业真实账套：不可用，走合成 + 差分隐私先验",
     ],
     compliance="同国家审计：只取聚合先验，账套全部合成。",
-    mvp="CorpAudit-Mini：合成制造业公司 × 1 年度 × 4 类算子 × 8 seed = 32 题 + 8 诱饵",
+    mvp="CorpAudit-Mini：合成制造业公司 × 1 年度 × 4 类算子 × 8 seed = 32 题 + 8 chaff",
     status="planned",
 )
 
@@ -212,7 +212,7 @@ CONTRACT_AUDIT = AuditDomainSpec(
     operators=[
         OperatorSpecLite("reentrancy", "重入 SWC-107",
                          "把余额清零行从外部 call 前移到 require 后",
-                         "健康版攻击失败 / 埋雷版攻击成功（Foundry 差分 PoC）"),
+                         "健康版攻击失败 / 注入版攻击成功（Foundry 差分 PoC）"),
         OperatorSpecLite("access_control", "访问控制缺失 SWC-105",
                          "删除 onlyOwner 校验",
                          "非 owner 也能调用特权函数"),
@@ -223,10 +223,10 @@ CONTRACT_AUDIT = AuditDomainSpec(
                          "改局部变量名 / 加注释 / 调序，漏洞位置行为不变",
                          "变体仍需过同一差分闸门"),
     ],
-    validator="Foundry 差分：happy-path 全过 + 健康版攻击失败 + 埋雷版攻击成功，三条同时成立。",
-    data_sources=["手写健康合约（src/）", "SWC Registry", "EVMbench / Code4rena 公开漏洞类型"],
+    validator="Foundry 差分：happy-path 全过 + 健康版攻击失败 + 注入版攻击成功，三条同时成立。",
+    data_sources=["手写种子合约（src/）", "SWC Registry", "EVMbench / Code4rena 公开漏洞类型"],
     compliance="合成数据，无敏感性问题。",
-    mvp="已有：3 算子 + 1 诱饵 + 变体，7 样本；目标扩到 100+",
+    mvp="已有：3 算子 + 1 chaff + 变体，7 样本；目标扩到 100+",
     status="done",
 )
 

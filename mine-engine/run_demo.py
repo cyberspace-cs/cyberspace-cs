@@ -1,4 +1,4 @@
-"""一键演示埋雷引擎闭环（M2：两个算子，经算子注册中心编排）。
+"""一键演示注入漏洞引擎闭环（M2：两个算子，经算子注册中心编排）。
 
 运行：
     py run_demo.py
@@ -35,7 +35,7 @@ def resolve_forge() -> str:
     raise SystemExit("未找到 forge，请确认 Foundry 已安装并在 PATH 中")
 
 
-# (健康合约, 源文件相对路径, 要埋的漏洞类型)
+# (种子合约, 源文件相对路径, 要埋的漏洞类型)
 PLAN = [
     {"contract_name": "Vault", "clean_rel_path": "Vault.sol", "vuln_type": "reentrancy"},
     {"contract_name": "Ownable", "clean_rel_path": "Ownable.sol", "vuln_type": "access_control"},
@@ -57,11 +57,11 @@ def main() -> None:
     validator = FoundryDiffValidator(ROOT, forge_exe=forge)
 
     print("=" * 72)
-    print("埋雷引擎 mine-engine · 闭环演示（算子注册中心 / 2 个算子）")
+    print("注入漏洞引擎 mine-engine · 闭环演示（算子注册中心 / 2 个算子）")
     print("=" * 72)
     print("已注册算子:", ", ".join(registry.types()))
 
-    # 1) 加载健康体 -> 经注册中心取对应算子埋雷
+    # 1) 加载种子程序 -> 经注册中心取对应算子注入漏洞
     samples = []
     for i, spec in enumerate(PLAN):
         loaded = generator.run(
