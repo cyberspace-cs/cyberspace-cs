@@ -7,7 +7,7 @@
 
 ![GitHub followers](https://img.shields.io/github/followers/cyberspace-cs?style=social)
 ![GitHub stars](https://img.shields.io/github/stars/cyberspace-cs?style=social)
-![GitHub repos](https://img.shields.io/badge/Public%20Repos-80+-brightgreen)
+![GitHub repos](https://img.shields.io/badge/Public%20Repos-130+-brightgreen)
 ![AI Agent](https://img.shields.io/badge/方向-AI%20Agent%20%2F%20LLM-8A2BE2)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
