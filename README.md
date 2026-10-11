@@ -180,11 +180,12 @@
 **动态卡片**（数据自动刷新；等级达到 A 及以上才展示圆环）
 
 <!-- rank-gate:start -->
+
 <!-- 本区块由 rank-gate.py 自动生成，请勿手动编辑 -->
 <!-- 规则：等级 >= A(S/A+/A) 才展示圆环；数据每日自动刷新 -->
 
 <!-- 状态：隐藏等级圆环 -->
-<!-- 指标：commits=763 prs=45 issues=1 reviews=0 stars=2 followers=11 -->
+<!-- 指标：commits=498 prs=45 issues=1 reviews=0 stars=2 followers=11 -->
 
 <div align="center">
 
@@ -193,7 +194,7 @@
 
 </div>
 
-<sub>🔒 当前等级 **B-**（全球前 67.9%），未达 A 门槛，圆环已隐藏 · 更新于 2026-10-09</sub>
+<sub>🔒 当前等级 **B-**（全球前 70.0%），未达 A 门槛，圆环已隐藏 · 更新于 2026-10-11</sub>
 <!-- rank-gate:end -->
 
 **技术栈分布**
