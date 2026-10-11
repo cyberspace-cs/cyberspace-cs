@@ -189,21 +189,7 @@
 
 </div>
 
-<sub>🔒 当前等级 **B-**（全球前 70.0%），未达 A 门槛，圆环已隐藏 · 更新于 2026-10-11</sub>
 <!-- rank-gate:end -->
-
-**技术栈分布**
-
-<div align="center">
-
-![TypeScript](https://img.shields.io/badge/TypeScript-82.7%3178C6?logo=typescript&logoColor=white)
-![Python](https://img.shields.io/badge/Python-7.4%3776AB?logo=python&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-2.6%F7DF1E?logo=javascript&logoColor=black)
-![HTML](https://img.shields.io/badge/HTML-3.8%E34F26?logo=html5&logoColor=white)
-![CSS](https://img.shields.io/badge/CSS-1.9%1572B6?logo=css3&logoColor=white)
-![Solidity](https://img.shields.io/badge/Solidity-1.6%363636?logo=solidity&logoColor=white)
-
-</div>
 
 ---
 
