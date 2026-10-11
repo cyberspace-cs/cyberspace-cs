@@ -138,10 +138,6 @@
 
 ### 📦 开源项目精选（fork）
 
-> 全部为 fork 自对应上游，已同步至最新版本。
-> ⭐ 徽章显示**上游仓库**的实时星数（fork 本身不继承星数），随上游自动更新。
-> 仅显示上游星数 ≥ 1,000 的项目，低于门槛的不标注。
-
 | 项目 | 上游 | ⭐ 上游星数 | 语言 |
 | --- | --- | --- | --- |
 | [**build-your-own-x**](https://github.com/cyberspace-cs/build-your-own-x) | [codecrafters-io](https://github.com/codecrafters-io/build-your-own-x) | [![stars](https://img.shields.io/github/stars/codecrafters-io/build-your-own-x?style=social)](https://github.com/codecrafters-io/build-your-own-x) | Markdown |
@@ -182,7 +178,6 @@
 <!-- rank-gate:start -->
 
 <!-- 本区块由 rank-gate.py 自动生成，请勿手动编辑 -->
-<!-- 规则：等级 >= A(S/A+/A) 才展示圆环；数据每日自动刷新 -->
 
 <!-- 状态：隐藏等级圆环 -->
 <!-- 指标：commits=498 prs=45 issues=1 reviews=0 stars=2 followers=11 -->
