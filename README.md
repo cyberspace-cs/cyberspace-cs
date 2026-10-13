@@ -181,7 +181,7 @@
 <!-- 规则：等级 >= A(S/A+/A) 才展示圆环；数据每日自动刷新 -->
 
 <!-- 状态：隐藏等级圆环 -->
-<!-- 指标：commits=511 prs=45 issues=1 reviews=0 stars=2 followers=11 -->
+<!-- 指标：commits=517 prs=45 issues=1 reviews=0 stars=2 followers=11 -->
 
 <div align="center">
 
@@ -190,7 +190,7 @@
 
 </div>
 
-<sub>🔒 当前等级 **B-**（全球前 69.9%），未达 A 门槛，圆环已隐藏 · 更新于 2026-10-12</sub>
+<sub>🔒 当前等级 **B-**（全球前 69.8%），未达 A 门槛，圆环已隐藏 · 更新于 2026-10-13</sub>
 <!-- rank-gate:end -->
 
 ---
