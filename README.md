@@ -158,7 +158,7 @@
 | [**LumaRing**](https://github.com/cyberspace-cs/LumaRing) | [potatoQi](https://github.com/potatoQi/LumaRing) | — | Swift |
 | [**night-shift**](https://github.com/cyberspace-cs/night-shift) | [4MaticLab](https://github.com/4MaticLab/night-shift) | — | TypeScript |
 
-**共 97 个 fork** · 覆盖 Agent 框架 / CLI 工具 / 数据库 / 运维 / 逆向工程等方向 · 均已同步上游最新提交
+**共 97 个 ** · 覆盖 Agent 框架 / CLI 工具 / 数据库 / 运维 / 逆向工程等方向 · 均已同步上游最新提交
 
 ---
 
@@ -187,11 +187,6 @@
 
 ![cyberspace-cs's GitHub stats](https://github-stats-extended.vercel.app/api?username=cyberspace-cs&show_icons=true&theme=vue&hide_rank=true)
 ![Top Langs](https://github-stats-extended.vercel.app/api/top-langs/?username=cyberspace-cs&layout=compact&theme=vue)
-
-</div>
-
-<sub>🔒 当前等级 **B-**（全球前 69.8%），未达 A 门槛，圆环已隐藏 · 更新于 2026-10-13</sub>
-<!-- rank-gate:end -->
 
 ---
 
