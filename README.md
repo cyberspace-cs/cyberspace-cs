@@ -51,7 +51,7 @@
 
 ---
 
-## 🕵️ 重点项目：ShiftX · 夜班侦探（Night Shift）
+## 🕵️ 项目：ShiftX · 夜班侦探（Night Shift）
 
 > 🏆 **AdventureX 2026 获奖项目**：Amazon Quick × First Prize + Injective Blockchain × AI Innovation Award
 > 🎮 **你睡着以后，他才开始工作。** —— 与你轮班生活的异步侦探游戏
@@ -83,7 +83,7 @@
 
 ---
 
-## 🎮 重点方向：多 Agent 动态角色与博弈
+## 🎮 方向：多 Agent 动态角色与博弈
 
 > 标 ⭐ 者为 fork 项目，徽章显示**上游**实时星数（≥1,000 才标注）。
 
@@ -158,7 +158,7 @@
 | [**LumaRing**](https://github.com/cyberspace-cs/LumaRing) | [potatoQi](https://github.com/potatoQi/LumaRing) | — | Swift |
 | [**night-shift**](https://github.com/cyberspace-cs/night-shift) | [4MaticLab](https://github.com/4MaticLab/night-shift) | — | TypeScript |
 
-**共 97 个 ** · 覆盖 Agent 框架 / CLI 工具 / 数据库 / 运维 / 逆向工程等方向 · 均已同步上游最新提交
+ **共 97 个**  · 覆盖 Agent 框架 / CLI 工具 / 数据库 / 运维 / 逆向工程等方向 · 均已同步上游最新提交
 
 ---
 
