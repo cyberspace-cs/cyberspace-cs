@@ -181,34 +181,7 @@
 <!-- 规则：等级 >= A(S/A+/A) 才展示圆环；数据每日自动刷新 -->
 
 <!-- 状态：隐藏等级圆环 -->
-<!-- 指标：commits=517 prs=45 issues=1 reviews=0 stars=2 followers=11 -->
-
-<div align="center">
-
-![cyberspace-cs's GitHub stats](https://github-stats-extended.vercel.app/api?username=cyberspace-cs&show_icons=true&theme=vue&hide_rank=true)
-![Top Langs](https://github-stats-extended.vercel.app/api/top-langs/?username=cyberspace-cs&layout=compact&theme=vue)
-
----
-
-## 📫 联系我
-
-- 💬 欢迎交流 AI Agent / LLM 工程 / 多 Agent 博弈话题
-- ⭐ 如果我的项目对你有帮助，欢迎点个 Star
-- 🔭 正在寻找 AI Agent 方向的合作与机会
-
-<div align="center">
-
-**Keep learning, keep building.** 🚀
-
-</div>
-
-<!-- rank-gate:start -->
-
-<!-- 本区块由 rank-gate.py 自动生成，请勿手动编辑 -->
-<!-- 规则：等级 >= A(S/A+/A) 才展示圆环；数据每日自动刷新 -->
-
-<!-- 状态：隐藏等级圆环 -->
-<!-- 指标：commits=520 prs=45 issues=1 reviews=0 stars=2 followers=11 -->
+<!-- 指标：commits=534 prs=45 issues=1 reviews=0 stars=2 followers=10 -->
 
 <div align="center">
 
@@ -217,5 +190,5 @@
 
 </div>
 
-<sub>🔒 当前等级 **B-**（全球前 69.8%），未达 A 门槛，圆环已隐藏 · 更新于 2026-10-14</sub>
+<sub>🔒 当前等级 **B-**（全球前 69.8%），未达 A 门槛，圆环已隐藏 · 更新于 2026-10-15</sub>
 <!-- rank-gate:end -->
