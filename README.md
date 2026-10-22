@@ -189,6 +189,3 @@
 ![Top Langs](https://github-stats-extended.vercel.app/api/top-langs/?username=cyberspace-cs&layout=compact&theme=vue)
 
 </div>
-
-<sub>🔒 当前等级 **B-**（全球前 65.0%），未达 A 门槛，圆环已隐藏 · 更新于 2026-10-22</sub>
-<!-- rank-gate:end -->
