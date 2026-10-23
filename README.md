@@ -189,3 +189,21 @@
 ![Top Langs](https://github-stats-extended.vercel.app/api/top-langs/?username=cyberspace-cs&layout=compact&theme=vue)
 
 </div>
+
+<!-- rank-gate:start -->
+
+<!-- 本区块由 rank-gate.py 自动生成，请勿手动编辑 -->
+<!-- 规则：等级 >= A(S/A+/A) 才展示圆环；数据每日自动刷新 -->
+
+<!-- 状态：隐藏等级圆环 -->
+<!-- 指标：commits=706 prs=58 issues=4 reviews=0 stars=3 followers=10 -->
+
+<div align="center">
+
+![cyberspace-cs's GitHub stats](https://github-stats-extended.vercel.app/api?username=cyberspace-cs&show_icons=true&theme=vue&hide_rank=true)
+![Top Langs](https://github-stats-extended.vercel.app/api/top-langs/?username=cyberspace-cs&layout=compact&theme=vue)
+
+</div>
+
+<sub>🔒 当前等级 **B-**（全球前 64.9%），未达 A 门槛，圆环已隐藏 · 更新于 2026-10-23</sub>
+<!-- rank-gate:end -->
