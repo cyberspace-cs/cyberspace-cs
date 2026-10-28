@@ -1,0 +1,28 @@
+{
+  "sample_id": "sample-0001",
+  "clean": "clean/Vault.sol",
+  "planted": "planted/VaultPlanted.sol",
+  "ground_truth_types": [
+    "reentrancy"
+  ],
+  "issues": [
+    {
+      "issue_id": "sample-0001-reentrancy",
+      "sample_id": "sample-0001",
+      "vuln_type": "reentrancy",
+      "swc": "SWC-107",
+      "severity": "critical",
+      "location": {
+        "file": "planted/VaultPlanted.sol",
+        "function": "withdraw",
+        "start_line": 19,
+        "end_line": 31
+      },
+      "difficulty": 2,
+      "poc": "VaultReentrancyPoC.t.sol::test_Reentrancy_Planted_AttackSucceeds",
+      "discovery_hint": "对照 CEI：检查 withdraw 中外部 call 与余额清零的先后顺序",
+      "operator": "ReentrancyInjector",
+      "seed": 42
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+flowchart TB
+    classDef wip fill:#fff8e1,stroke:#f9a825,stroke-width:2px,color:#6d4c41
+    classDef todo fill:#eef2f7,stroke:#90a4ae,stroke-width:2px,color:#37474f
+    classDef gate fill:#fce4ec,stroke:#c2185b,stroke-width:3px,color:#880e4f
+    classDef done fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
+
+    subgraph NOW["接下来（按优先级）"]
+        direction LR
+        P0["① P0 补样本<br/>钉死 pro · 约 $2"]:::wip --> A0{"② A0 主实验<br/>4 档 × ≥6 模型<br/>成本 $8–12"}:::gate
+    end
+
+    NOW --> LATER
+
+    subgraph LATER["再往后"]
+        direction LR
+        V["③ 用 verl 真跑 RL"]:::todo --> D["④ 第二域：合约域"]:::todo --> EX["⑤ 审计师盲审"]:::todo
+    end
+
+    LATER --> OUT(["交付：判分器体检工具<br/>输入 判分器 + 题目<br/>输出 漏报 / 误报 / 判别力 / 盲区<br/>全程零人工标注"]):::done

@@ -1,0 +1,40 @@
+# Compiler files
+cache/
+out/
+
+# Commonly ignored directories
+.logs/
+.ignore/
+
+# Ignores development broadcast logs
+!/broadcast
+/broadcast/*/31337/
+/broadcast/**/dry-run/
+
+# Docs：mine-engine/docs 是研究文档本体，必须入库（此前被屏蔽导致 GitHub 上 404）
+# 若将来引入自动生成的站点产物，再单独屏蔽（如 site/、_build/）
+
+# Dotenv file
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+
+# 运行产物
+results_level3.json
+results_benchmark.json
+results_offline_smoke*.json
+results_real_*.json
+results_*.json
+test/ModelPoC.t.sol
+*.log
+sweep_*.log
+
+# 单价表（含商业信息，且各人各环境不同；用 prices.example.json 作模板）
+prices.json
+
+# Harbor 导出产物（可由 run_harbor_export.py 重新生成）
+harbor_tasks/

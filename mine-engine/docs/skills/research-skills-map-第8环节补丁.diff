@@ -1,0 +1,39 @@
+diff --git a/research-skills-map/SKILL.md b/research-skills-map/SKILL.md
+index 2e2b342..78dfd08 100644
+--- a/research-skills-map/SKILL.md
++++ b/research-skills-map/SKILL.md
+@@ -26,6 +26,20 @@ license: MIT
+ | 6️⃣ 论文写作 | Paper Writer、Academic Paper |
+ | 7️⃣ 投稿返修 | Ref Verifier、Pre-Submission Reviewer、Nature Response |
+ 
++## ⚠️ 分类维度零：按「测量是否可信」质控（2026-10-05 补充）
++
++前 7 个环节都假设「实验数据是可信的」。但本项目在 S1 实测中**两次差点给出假结论**，
++且两次都不是被某个 skill 拦下的，是自己在代码里写了断言拦下的。因此补第 8 环节：
++
++| 失效类型 | 症状 | 拦截手段 |
++| --- | --- | --- |
++| 基础设施伪装成结论 | 思考链烧光 token → 空答案 → 分母只剩 1 → 报出「漏判率 0.000」 | 决策守卫：样本量/空答率不达标时返回 INCOMPLETE，不给方向性结论 |
++| 台子问题伪装成被测对象 | 题面口径有歧义 → 干净样本误报率 1.000 | 先证明题无歧义，再测模型能力 |
++| 重复计数灌水n | 分母被读了两遍 → 置信区间假性变窄 | 聚合前按 (arm, cond, seed) 去重 |
++| 抽样噪声当结论 | 单次调用的比例决定 go/no-go | 每题重复 ≥3 次取多数，并报告分歧率 |
++
++**判据要在跑之前写死**，否则一定会挑对自己有利的那个口径。
++
+ ## 分类维度二：按来源仓库
+ 
+ - **Nature Skills（7）**：Nature Academic Search / Nature Reader / Nature Paper Card / Nature Proposal Writer / Nature Figure / Ref Verifier / Nature Response
+@@ -42,7 +56,13 @@ license: MIT
+ 1. **不要追求完美顺序**：科研不是线性流程，可按需跳跃使用各环节。
+ 2. **同类技能择优**：每个环节有 2–3 个可选 Skill，按"时间紧张度 + 严谨度要求"选择。
+ 3. **输出复用**：每个环节的输出（文献卡片、实验计划）可作为后续环节输入。
++4. **先装本仓库里真实存在的**：目前可直接安装的科研相关 Skill 是 `idea-refine`（想法打磨）
++   与 `charts`（图表）。地图上的 18 个不在本仓库，见文末来源说明的澄清。
+ 
+ ## 来源说明
+ 
+ 本分类整理自微信公众号《告别科研内耗！GPT-6 Astra skills 汇总带你跑通科研全流程》（2026-10-05）。文中 Skill 实际来自 Nature Skills / Supervisor-Skills / Academic Research Skills / USTC / ResearchStudio 等公开技能仓库，多为**通用科研方法学**工具，可跨学科使用。如需把新链接的科研 Skills 并入此地图，把链接交给 Agent 即可合并扩展。
++
++> ⚠️ **本仓库只收录「地图」，不收录地图上列的那 18 个 Skill。**
++> `clouds` 里没有 `nature-figure` / `pre-submission-reviewer` 等目录，本报告也不含外链。
++> 要用它们需另行从各自的上游仓库获取，**不要在本仓库里`ls` 一遍就以为装好了**。

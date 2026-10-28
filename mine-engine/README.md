@@ -1,0 +1,360 @@
+# mine-engine · 动态对抗审计考试的注入漏洞引擎（M0–M3）
+
+> **项目代号：AuLE = Adaptive Audit Last Exam**（自适应审计终局考试）
+> 对标 **ALE / Agents' Last Exam**（UC Berkeley RDI, arXiv:2606.05405）。
+
+把「动态对抗考试 / Adaptive Verifier」落到**智能合约审计**垂直场景的最小可用引擎：
+自动在**种子合约**上做一次最小化、可复现的程序变换（注入漏洞），用**差分 PoC**
+证明雷确实是这次埋进去的，再把审计 Agent 的报告对 ground truth 判分。
+
+范式对齐 **OpenDCAI/DataFlow**（https://github.com/OpenDCAI/DataFlow）：
+`Pipeline -> Operator -> (Prompt)`，算子处理结构化记录、可串联、可替换后端。
+
+## 闭环
+
+```
+种子合约 ──注入算子──▶ 注入版 + ground truth
+ │
+ 差分 PoC（forge test）
+ 未注入版：攻击失败 / 注入版：攻击成功 / happy-path 全过
+ │
+ 审计报告 ──▶ recall / precision / F1
+```
+
+## 目录结构
+
+```
+mine-engine/
+├─ src/
+│ ├─ Vault.sol # 健康：资金池（正确 CEI，抗重入）
+│ ├─ Ownable.sol # 健康：访问控制（onlyOwner）
+│ ├─ Attacker.sol # 重入攻击合约（PoC 工具）
+│ └─ planted/
+│ ├─ VaultPlanted.sol # 注入漏洞：重入（SWC-107）黄金输出
+│ └─ OwnablePlanted.sol # 注入漏洞：访问控制缺失（SWC-105）黄金输出
+├─ test/
+│ ├─ Vault.t.sol # Vault 正常功能（4 项）
+│ ├─ Ownable.t.sol # Ownable 正常功能（5 项）
+│ ├─ VaultReentrancyPoC.t.sol # 重入差分 PoC
+│ └─ OwnableAccessControlPoC.t.sol # 访问控制差分 PoC
+├─ engine/ # DataFlow 风格 Python（零第三方依赖）
+│ ├─ core/ # Pipeline/Operator 基类 + Issue schema
+│ ├─ generators/ # ArtifactGenerator：加载种子合约
+│ ├─ operators/
+│ │ ├─ registry.py # 算子注册中心（核心 IP：按类型动态取用）
+│ │ ├─ reentrancy.py # 重入注入漏洞（确定性源码变换）
+│ │ └─ access_control.py # 访问控制注入漏洞（删除身份校验）
+│ ├─ validators/ # IssueValidator：forge 差分验证（领域无关）
+│ └─ scorers/ # ReportScorer：报告判分
+├─ datasets/ # 生成样本落盘（clean/planted/meta.json）
+└─ run_demo.py # 一键演示完整闭环
+```
+
+## 运行
+
+需要 [Foundry](https://book.getfoundry.sh/)（forge）。一键演示：
+
+```shell
+py run_demo.py
+```
+
+单独跑合约测试：
+
+```shell
+forge test
+```
+
+## M2 实测结果
+
+- **2 个种子合约**（Vault / Ownable）、**2 个注入算子**（重入 SWC-107 / 访问控制 SWC-105），
+ 经**算子注册中心**按类型动态编排；
+- 算子生成的注入版与黄金版**归一化等价**（忽略注释/空白）；
+- `forge test` **13/13 通过**：9 项 happy-path、4 项差分 PoC
+ （未注入版攻击失败 / 注入版攻击成功）；
+- 报告判分（ground truth = reentrancy）：
+
+ | 报告策略 | recall | precision | F1 |
+ |---|---|---|---|
+ | 把所有类型全报一遍（作弊） | 1.0 | 0.083 | 0.154 |
+ | 只报确实发现的重入（好审计） | 1.0 | 1.0 | 1.0 |
+ | 什么都没发现（漏报） | 0.0 | 1.0 | 0.0 |
+
+ precision 与 recall 同时计分，误报被惩罚，防止「全报一遍」刷分。
+
+## M3 批量生成
+
+```shell
+py batch_generate.py
+```
+
+- 遍历 `(种子合约 × 注入算子)` 组合，逐条做 Foundry 差分验证；
+ 通过则落盘 `datasets/sample-XXXX/`，失败自动丢弃并记录；
+- 产出 `datasets/index.jsonl`（每行一个样本，含 contract/vuln/swc/severity/难度/路径/validated）；
+- 当前 2 组合 **差分通过 2/2（有效率 100%）**；
+- 固定 seed，两次运行 `index.jsonl` 的 SHA256 完全一致（**可复现**）；
+- 新增算子只需在 `registry` 注册并在 `batch_generate.py` 的 `COMBOS` 加一行，即可线性扩充。
+
+## M6 审计 Agent harness + baseline
+
+```powershell
+# 密钥走环境变量，仓库不含任何真实 key（.env 已被 .gitignore 排除）
+$env:LLM_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+$env:LLM_API_KEY="sk-..."
+$env:LLM_MODELS="qwen3.8-flash,deepseek-v4-flash,qwen3.8-max"
+py run_benchmark.py
+```
+
+- `engine/llm/client.py`：OpenAI 兼容 chat 客户端（urllib 零依赖），base/key/model 全从环境变量读；
+- `engine/agents/audit_agent.py`：只喂 planted 源码（不给 clean / PoC / ground truth），要求模型只输出 JSON findings；
+- `engine/scorers/report_score.py::score_report`：函数级判分——vuln_type 归一化 + function token 交集，误报计入 FP；
+- `run_benchmark.py`：对 index.jsonl 每个样本跑指定模型，输出 TP/FP/FN/Recall/Precision/F1 汇总表。
+
+**baseline 实测（7 样本：3 雷×{原题,LLM变体} + 1 chaff bug，DashScope 网关，standard prompt）**：
+
+> ⚠️ **本表是早期 baseline（DashScope 网关 + v1 判分器），已被真实跑测刷新**：
+> [`docs/12`](./docs/12-真实模型接入与踩坑记.md) 用 DeepSeek 官方网关 + v2 判分器跑同一批样本，
+> `deepseek-flash` 真实 F1=**0.730**、`deepseek-v4-pro`=**0.871**。
+> 表里的 1.000 是**样本小 + 网关/判分器差异**造成的饱和假象，**对外请以 doc 12 为准**。
+> 另注：`deepseek-v4-flash` 在 DeepSeek 官方网关会被**静默改名**为 `deepseek-flash`（不报错）。
+
+| model | TP | FP | FN | Recall | Precision | F1 |
+|---|---|---|---|---|---|---|
+| qwen3.8-flash | 6 | 0 | 0 | 1.000 | 1.000 | 1.000 |
+| deepseek-v4-flash | 6 | 0 | 0 | 1.000 | 1.000 | 1.000 |
+| deepseek-v4-pro | 6 | 0 | 0 | 1.000 | 1.000 | 1.000 |
+| qwen3.8-max | 6 | 2 | 0 | 1.000 | 0.750 | 0.857 |
+
+**发现**：① deepseek-v4-pro（官方真实模型名，V4-Pro-0813）满分；② 上次 deepseek-v4-flash 翻车这次满分，说明单次跑有随机性，baseline 需多次取平均；③ LLM 变体题让 qwen3.8-max 误报 2 处（precision 0.75）——改写后的代码让大模型过度敏感。区分度刚起步，题还要继续加难。
+
+## Exploit 模式（Level 2）实测
+
+| 模型 | 打穿率 | 关键失败 |
+|---|---|---|
+| qwen3.8-flash | 5/6 | tx_origin 变体 fail "not owner" |
+| qwen3.8-max | 5/6 | tx_origin 原题 fail "not owner" |
+| deepseek-v4-flash | 4/6 | reentrancy 变体 no_code；tx_origin 变体 fail |
+| deepseek-v4-pro | 3/6 | reentrancy 截断；access_control 变体 no_code |
+
+三条发现（写论文要用）：
+1. **Detect 满分 ≠ Exploit 打穿**——同一模型在两种模式下的排名会变；
+2. **tx_origin 是终极区分题**——模型不知道 Foundry 要用 `vm.prank(sender, origin)` 双参模拟；
+3. **deepseek-v4-pro 反而不如 flash**——这不是推理能力问题，是长代码生成时
+ `max_tokens=4096` 不够导致**截断**（sample-0001 直接 `vm.deal(vict` 断掉）。
+ ⚠️ 这是**评测假象**，不修正会把"生成长度限制"误当成"能力差异"。
+
+## M7 · 抗污染、可复现、接入行业标准
+
+定位升级：**mine-engine 不是审计 Agent，是"会自己出题的考试院"**——
+一台持续产出**新鲜、可验证、抗污染**审计考题的引擎。智能合约是它落地的第一个赛道。
+
+为什么必须是"引擎"而不是"数据集"：公开 benchmark 一发布就开始腐烂（题目泄漏进训练语料）。
+EVMbench 用训练截止后的真实事故做无污染重测，Agent 表现断崖下跌——这就是证据。
+我们的题是**考试开始那一刻才生成**的，背不到。
+
+### Harbor 导出（对齐行业标准）
+
+[Harbor](https://github.com/harbor-framework/harbor) 是 Terminal-Bench 团队出品的评测执行器，
+正在成为跑分的事实标准。一键把数据集导出成它的任务三元组：
+
+```shell
+py run_harbor_export.py # 默认 detect 模式 -> harbor_tasks/
+py run_harbor_export.py --mode exploit # 判攻击 PoC 能否真打穿
+
+uv tool install harbor
+harbor run --dataset-path harbor_tasks --agent claude-code --model anthropic/claude-opus-4-1
+```
+
+每个任务目录严格遵循 `instruction.md + environment/ + tests/ + solution/`：
+**ground truth 只存在于 `tests/` 下**，agent 在 workspace 里翻不到答案。
+
+### 判分 v2（类型 + 定位 IoU + 严重度加权）
+
+```shell
+py run_benchmark.py --scorer v2 --repeat 5 --out results.json
+```
+
+| 场景 | v1（旧） | v2（新） |
+|---|---|---|
+| 说 "non-reentrant"（意为安全）却填 reentrancy | ❌ 误判为 TP | ✅ 判为 FP（否定词检测） |
+| 定位到错误的函数 | 只按类型判，仍算 TP | 定位分扣减，F1 下降到 0.82 |
+| 把 critical 报成 low | 不扣分 | recall 扣到 0.8 |
+| 同一雷重复报两次 | 重复计数 | 自动去重 |
+| 定位粒度 | — | 遵循"判分严格度不超过标注粒度"：gt 是函数级区间时，报区间内任意行即算命中 |
+
+### 难度 / 区分度 / 抗污染（engine/analytics）
+
+| 指标 | 含义 |
+|---|---|
+| `item_difficulty` | 实测难度（替代此前手填的 1/2） |
+| `item_discrimination` | 区分度 D = 高能力组通过率 − 低能力组通过率，>0.3 为好题 |
+| `fit_rasch` | 简化 IRT（1PL）拟合，把题目难度与模型能力放到同一把尺子上 |
+| `contamination_resistance` | **CRS 抗污染分**：同算子换 seed 重生成新题后分数是否稳定 |
+
+CRS 只有"引擎型"benchmark 能算，静态数据集算不了——这是我们的结构性优势。
+
+### 环境四维体检（不只是评模型，还要评考场）
+
+依据中科院自动化所综述 arXiv:2606.12191，合成环境要按**正确性 / 多样性 / 复杂性 / 忠实度**
+四维验收；AWM（arXiv:**2602.10090**）再加两条工程指标：**blocked rate**（废题率）与**类别上限**。
+（注意别把 AWM 的编号和 ALE 的 2606.05405 搞混——这是两个不同的东西。）
+
+```shell
+py run_env_quality.py # 体检 datasets/
+py run_env_quality.py --gold results.json # 补正确性维（黄金解答自测）
+py run_env_quality.py --reference real/ # 补忠实度维（真实任务锚定集）
+py run_env_quality.py --json # 机读输出
+```
+
+当前实测（7 样本）：
+
+| 维度 | 得分 | 诊断 |
+| --- | --- | --- |
+| 正确性 | n/a | 待补 blocked rate |
+| 多样性 | 0.3665 | 雷型分散（类别均衡 0.975）但**代码结构高度同质**（结构离散 0.173） |
+| 复杂性 | 0.3673 | 5 档难度只占 2 档，梯度没铺开 |
+| 忠实度 | n/a | **最大盲区**——缺真实任务锚定集 |
+| 综合 | **weak (2 dims unmeasured)** | 我们只稳住了四条里最容易的一条 |
+
+### 时间轴 / 成本轴 / 饱和检测（对标 ALE-Bench）
+
+```python
+from engine.analytics import saturation_check, cost_quality_frontier
+
+# 给更多时间还能涨多少分？三点法拟合渐近线
+saturation_check([(3600, 58.8), (14400, 77.7), (259200, 87.6), (604800, 92.1)])
+# -> asymptote=92.70 headroom=0.60 verdict='saturated'
+# （ALE-Bench 论文实测曲线，被正确判为已贴天花板）
+
+# 谁在成本—质量帕累托前沿上？
+cost_quality_frontier([
+ {"name": "OpenHands", "cost": 3.25, "score": 905},
+ {"name": "ALE-Agent", "cost": 100.33, "score": 1879},
+])
+```
+
+ALE-Bench（Sakana × AtCoder, arXiv:2506.09050）的三条纪律：**连续分代替二值分**、
+**必须报时间预算**、**必须报成本**。前一条我们已部分做到，后两条**已补齐**（见下）。
+
+### 时间与成本记账（M7+ · 行动方案第一步，已落地）
+
+为什么必须记：两个模型同样考 90 分，一个花 3 分钟 2 分钱、另一个花 1 小时 30 块钱——
+**只看分数是平手，看完成本是天壤之别**。没有这两列，这个问题根本答不出来。
+
+```shell
+$env:LLM_PRICES='{"qwen3.8-flash":{"in":0.2,"out":2.0}}' # USD / 百万 token
+py run_benchmark.py --repeat 3 --out results.json
+```
+
+榜上会多出四列：`Wall(s)` / `Tokens` / `Cost` / `$/solved`。
+
+成本口径是 **cost per solved task**（ALE-Bench 口径）：分母只算做对的题数，
+分子含全部调用开销。**公式：每成功一题成本 = 每题成本 ÷ 命中率。**
+
+> ⚠️ 单价**必须自己配置**，仓库里**不内置任何价格**。
+> 编一个数字比没有数字更危险——它会让成本那一列看起来很有道理，实际上是假的。
+> 未配置时该列显示 `n/a`（表示"不知道"，**不是** "免费"，两者是两回事）。
+
+### 防伪检查（M7+ · 行动方案第二步，已落地）
+
+行业术语叫 **dummy check / oracle check**（Terminal-Bench 的 `harbor run --agent oracle`）。
+每道题都要先证明自己不是废题：
+
+| 检查 | 普通题 | chaff 题 |
+| --- | --- | --- |
+| 白卷（什么都不答） | 必须 **0 分** | 必须 **满分**（没乱报才是对的） |
+| 标准答案（由 ground truth 自动构造） | 必须 **满分** | 必须 **满分** |
+| 反向白卷（故意乱报一个） | 仅记录 | 必须 **0 分** |
+
+```shell
+py run_dummy_check.py # 表格输出，退出码 1 = 有废题（可接 CI）
+py run_dummy_check.py --json # 机器可读
+```
+
+> 白卷检查专抓一类**不会报错的 bug**：判分逻辑写错导致"什么都不答也能得分"，
+> 分数会**悄悄虚高**，你根本不会注意到。
+
+当前 7 个样本全部通过（v1 / v2 两个判分器都已验证）。
+
+### 难度连续旋钮（M7+ · 行动方案第四步，我们独有的牌）
+
+同一道题旋钮从刻度 0 转到 5，得到 6 道难度不同的题——**分数连续可调，这正是
+ALE（三档离散）和 ALE-Bench（题目自带、不可调）都没有的**。
+
+```shell
+# 离线：只看"题目长相"是否真的变了（chaff bug/伪装/跨函数随刻度单调增加）
+py run_difficulty_sweep.py
+
+# 静态体检：插进去的代码能不能编译（本机无 forge 时的护栏）
+py run_difficulty_lint.py # 括号配平 / 依赖符号已声明 / 无重名函数 / 无自曝身份
+
+# 真跑：出"难度刻度 → F1 / 误报率 / 耗时 / 成本"曲线（会花钱）
+py run_difficulty_sweep.py --audit --repeat 3 \
+ --samples sample-0001,sample-0002,sample-0003 --model deepseek-flash
+```
+
+> ⚠️ **写"伪装类"算子的头号陷阱：chaff bug 不能自曝身份。**
+> 最初chaff 函数叫 `decoyPayout`、注释写着 `[decoy] looks risky but...`，
+> 模型读到注释就知道这段无害、直接跳过，**难度旋钮退化成"只加长度不加难度"，F1 反而上升**。
+> 真实工程里攻击者不会给代码写批注说明自己无害。详见 [doc 12 第 7 节](./docs/12-真实模型接入与踩坑记.md)。
+
+### 离线自测（不需要 API key）
+
+本机没有密钥时，用假 LLM 也能验证记账链路是否正确：
+
+```shell
+py run_offline_smoke.py # 19 项断言（记账/截断判定/env 加载/定价）
+py run_implementation_smoke.py # 旋钮三条硬规则 + 自我修正循环收敛
+py run_difficulty_lint.py # 18 项静态体检
+```
+
+### 三条赛道（四组件领域无关，换 adapter 即可）
+
+| 赛道 | 验证器硬度 | 状态 |
+|---|---|---|
+| 智能合约审计 | L1 · 编译器 + 测试 | ✅ 已落地 |
+| 企业审计（舞弊/内控） | L2 · 三表勾稽 + 凭证链 | 设计完成（8 个算子） |
+| 国家审计（财政资金） | L3 · 勾稽 + 法条命中 | 设计完成（8 个算子） |
+| 审计师（CPA 底稿） | L4 · 持牌人 rubric | 设计完成（7 个算子） |
+
+```shell
+py -c "from engine.adapters import list_domains, scaffold_checklist; \
+print([d.name_cn for d in list_domains()]); print(scaffold_checklist('corp-audit'))"
+```
+
+## 研究文档
+
+完整分析见 [`docs/`](./docs)：
+
+| 文档 | 内容 |
+| --- | --- |
+| [00-INDEX](./docs/00-INDEX.md) | 索引与三分钟速读 |
+| [01-code-review](./docs/01-code-review.md) | 代码与资产现状审查（含 P0/P1 问题清单） |
+| [02-evolution](./docs/02-evolution.md) | 研究演进脉络（新手向，从"人出题"到"机器出题"） |
+| [03-landscape](./docs/03-landscape.md) | 同行 benchmark 全景与定位矩阵 |
+| [04-three-tracks](./docs/04-three-tracks.md) | 国家审计 / 企业审计 / 审计师三条赛道的数据设计 |
+| [05-ideas](./docs/05-ideas.md) | 13 个科研 idea（含创新性/工作量/风险评分） |
+| [06-roadmap](./docs/06-roadmap.md) | M7–M10 工程路线图 |
+| [07-synthetic-environment](./docs/07-synthetic-environment.md) | 合成环境数据：对标 AWM 与中科院综述，我们缺的三件工程件 |
+| [08-evaluation-craft](./docs/08-evaluation-craft.md) | 评测这门手艺：八个陷阱 + 报告必备清单 |
+| **[09-synthetic-env-playbook](./docs/09-synthetic-env-playbook.md)** | **三坐标手册：ALE / ALE-Bench / Harbor 分别解决什么问题，我们差在哪** |
+| [10-action-plan](./docs/10-action-plan.md) | 行动方案（待审核）：零基础可读，四步走 + 6 个待决策点 |
+| **[11-fundamentals](./docs/11-fundamentals.md)** 🌱 | **零基础从这篇开始**：用"一场考试"讲清全部名词，<br>收录 CSDN / 小红书的四种讲法，再讲三件事如何拼成 AuLE |
+
+可视化报告：[`docs/report.html`](./docs/report.html)
+
+## 下一步（M8+）
+
+- **自我修正循环**（半天，性价比最高）：验证失败时把 `forge` 的 stderr + 源码喂回 LLM
+ 让它修自己的注入漏洞代码。AWM 平均 **1.13 次迭代**即可修复，各阶段成功率 > 85%。
+ 不做这个，扩题池会被算子成功率卡死；
+- **补多样性**：当前结构离散度仅 0.173（雷型分散但代码同质），
+ 加组合雷 / 更隐蔽chaff bug / 变体改写，并用 `run_env_quality.py` 持续监控；
+- **建立真实任务锚定集**：忠实度完全没被度量，而它是唯一能摧毁整个方法论的维度；
+- **继续加难**：unchecked call（SWC-104）、组合雷（同合约多雷）；
+ 让 qwen 系也开始丢分；
+- **Review 模式**：给模型一份"已完成的审计报告"，里面埋了错误结论，让它复核
+ （借鉴 FinancialAuditBench 的 review 设定，成本更低、区分度更高）；
+- 多轮工具调用 Agent（读文件 / grep / forge test）替代单轮；
+- 远程沙箱部署 Foundry + harness，做批量/受控评测；
+- **第二个 adapter**：优先企业审计（验证器最硬、数据最公开），证明四组件抽象真的跨赛道；
+- 注入漏洞–审计共演化。

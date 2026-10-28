@@ -1,0 +1,84 @@
+<svg viewBox="0 0 680 530" width="100%" xmlns="http://www.w3.org/2000/svg">
+<title>Fig. 1 — v4 科研架构：verifier 审计的三层结构（立项版·已被 S1 实测超越，看总图请用 fig7）</title>
+<desc>构造侧顺带产出参照 oracle，审计侧用它在零人工标注下测出误差预算，后果侧在不跑 RL 的前提下预测三种 GRPO 失效形态。本图为 v4 立项时的架构图，不含 S1 实测结论；总图见 fig7-aule-research-plan.svg。</desc>
+<style>
+text{font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.b1{fill:#E6F1FB;stroke:#378ADD}
+.b2{fill:#EEEDFE;stroke:#7F77DD}
+.n{fill:#F1EFE8;stroke:#888780}
+.r{fill:#FCEBEB;stroke:#E24B4A}
+.a{fill:#FAEEDA;stroke:#EF9F27}
+.tp{fill:#1F1F1E}
+.ts{fill:#5F5E5A}
+.tt{fill:#26215C}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+</defs>
+<rect width="680" height="530" fill="#FFFFFF"/>
+
+<text x="40" y="36" font-size="13" font-weight="500" class="tp">① 构造侧 · 参照 oracle 是构造的副产品，不是标注出来的</text>
+<rect class="b1" x="40" y="48" width="170" height="56" rx="8" stroke-width="0.5"/>
+<text x="125" y="66" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" class="tp">种子账套</text>
+<text x="125" y="85" text-anchor="middle" dominant-baseline="central" font-size="12" class="ts">会计恒等式天然自平</text>
+<rect class="b1" x="255" y="48" width="170" height="56" rx="8" stroke-width="0.5"/>
+<text x="340" y="66" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" class="tp">注入算子</text>
+<text x="340" y="85" text-anchor="middle" dominant-baseline="central" font-size="12" class="ts">舞弊手法库，θ 可调</text>
+<rect class="b1" x="470" y="48" width="170" height="56" rx="8" stroke-width="0.5"/>
+<text x="555" y="66" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" class="tp">任务 + 参照 oracle</text>
+<text x="555" y="85" text-anchor="middle" dominant-baseline="central" font-size="12" class="ts">答案由动作写定</text>
+<path d="M212 76L251 76" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M427 76L466 76" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<text x="40" y="146" font-size="13" font-weight="500" class="tp">② 审计侧 · 用参照 oracle 反过来审 verifier（本文核心，零人工标注）</text>
+<rect class="b2" x="40" y="158" width="170" height="56" rx="8" stroke-width="0.5"/>
+<text x="125" y="176" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" class="tp">任意待审 verifier</text>
+<text x="125" y="195" text-anchor="middle" dominant-baseline="central" font-size="12" class="ts">含 LLM-as-judge</text>
+<rect class="b2" x="255" y="158" width="170" height="56" rx="8" stroke-width="0.5"/>
+<text x="340" y="176" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" class="tp">对同一批样本判定</text>
+<text x="340" y="195" text-anchor="middle" dominant-baseline="central" font-size="12" class="ts">检测层与归因层分开</text>
+<rect class="b2" x="470" y="158" width="170" height="56" rx="8" stroke-width="0.5"/>
+<text x="555" y="176" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" class="tp">误差预算三列</text>
+<text x="555" y="195" text-anchor="middle" dominant-baseline="central" font-size="12" class="ts">FNR · FPR · 不可见清单</text>
+<path d="M212 186L251 186" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M427 186L466 186" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M555 104L555 130L340 130L340 154" fill="none" stroke="#7F77DD" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+<text x="447" y="123" text-anchor="middle" font-size="12" class="tt">参照与被审者互不依赖</text>
+
+<text x="40" y="256" font-size="13" font-weight="500" class="tp">③ 后果侧 · 不跑 RL 就能预测失效形态（解析式 + 蒙特卡洛双校验）</text>
+<rect class="b2" x="40" y="268" width="170" height="56" rx="8" stroke-width="0.5"/>
+<text x="125" y="286" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" class="tp">误差预算输入</text>
+<text x="125" y="305" text-anchor="middle" dominant-baseline="central" font-size="12" class="ts">(FNR, FPR) 二元组</text>
+<rect class="b2" x="255" y="268" width="170" height="56" rx="8" stroke-width="0.5"/>
+<text x="340" y="286" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" class="tp">闭式预测 + MC 校验</text>
+<text x="340" y="305" text-anchor="middle" dominant-baseline="central" font-size="12" class="ts">偏差 &gt; 0.15 即报警</text>
+<rect class="b2" x="470" y="268" width="170" height="56" rx="8" stroke-width="0.5"/>
+<text x="555" y="286" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" class="tp">结构性不可见判定</text>
+<text x="555" y="305" text-anchor="middle" dominant-baseline="central" font-size="12" class="ts">破坏集 ∩ 判据集 = ∅</text>
+<path d="M212 296L251 296" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M427 296L466 296" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M555 214L555 264" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M555 324L555 334L130 334L130 342" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M555 334L550 342" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M555 334L340 334L340 342" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<rect class="n" x="40" y="344" width="180" height="40" rx="8" stroke-width="0.5"/>
+<text x="130" y="358" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" class="tp">方向不变</text>
+<text x="130" y="374" text-anchor="middle" dominant-baseline="central" font-size="12" class="ts">误报为 0 时漏判无害</text>
+<rect class="r" x="250" y="344" width="180" height="40" rx="8" stroke-width="0.5"/>
+<text x="340" y="358" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" class="tp">符号翻转</text>
+<text x="340" y="374" text-anchor="middle" dominant-baseline="central" font-size="12" class="ts">误报才是致命的</text>
+<rect class="a" x="460" y="344" width="180" height="40" rx="8" stroke-width="0.5"/>
+<text x="550" y="358" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" class="tp">无梯度退化</text>
+<text x="550" y="374" text-anchor="middle" dominant-baseline="central" font-size="12" class="ts">静默停摆，不报错</text>
+
+<path d="M340 384L340 402" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<rect class="b2" x="40" y="406" width="600" height="64" rx="12" stroke-width="0.5"/>
+<text x="60" y="428" dominant-baseline="central" font-size="14" font-weight="500" class="tp">交付形态：VerifierAuditOperator —— 输入轨迹与任务自带 verifier，输出误差预算，不需要任何人工标注</text>
+<text x="60" y="450" dominant-baseline="central" font-size="12" class="ts">不是「我给你一个更好的 judge」，而是「我告诉你你现在这个 judge 有多差」—— 后者是所有人都需要、但都没人提供的信息产品</text>
+
+<text x="40" y="494" font-size="12" class="ts">已跑通（审计域）：种子账套 1600/1600 自平 · DIC 400/400 有效 · 0.64 ms/样本 · 7 个 verifier 误差全部精确测出 · NMI 判定系统性</text>
+<text x="40" y="512" font-size="12" fill="#888780">尚未验证：真实 LLM judge 的 FNR/FPR（S1）· verl 实跑 GRPO（S3）· 换域后错误预算矩阵是否同形（S4）</text>
+</svg>

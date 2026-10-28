@@ -1,0 +1,61 @@
+name: Rank Gate
+
+# 每天跑一次等级门控：只有等级达到 A 及以上（S / A+ / A）才展示等级圆环，
+# 否则给卡片加 hide_rank=true 隐藏圆环。
+# 手动触发：Actions 页面 → Rank Gate → Run workflow
+on:
+  schedule:
+    # GitHub Actions 用 UTCcron。北京时间每天 03:17跑（约11:17）
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rank-gate
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 判定等级并更新 README
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USERNAME: ${{ github.repository_owner }}
+        run: |
+          set -uo pipefail
+          # rank-gate.py 内部对采集失败做了 fail-safe（返回 0 且不改动 README），
+          # 这里额外兜一层，防止未预期异常把工作流标红
+          python rank-gate.py \
+            --user "$USERNAME" \
+            --readme README.md \
+            --theme vue || {
+              echo "::warning::rank-gate 执行异常，本次跳过，README 保持原样"
+              exit 0
+            }
+
+      - name: 提交变更
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- README.md; then
+            echo "等级未变化，README 无需更新"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          LEVEL=$(grep -oE '\*\*[SABC][+-]?\*\*' README.md | head -1 || true)
+          git commit -m "chore(rank-gate): 更新等级展示状态 ${LEVEL:-未变化}"
+          git push
+          echo "已提交：${LEVEL:-未变化}"

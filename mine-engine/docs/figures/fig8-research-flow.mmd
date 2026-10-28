@@ -1,0 +1,48 @@
+flowchart TB
+    classDef done fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
+    classDef wip fill:#fff8e1,stroke:#f9a825,stroke-width:2px,color:#6d4c41
+    classDef gate fill:#fce4ec,stroke:#c2185b,stroke-width:3px,color:#880e4f
+    classDef fixed fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#01579b
+    classDef find fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c
+    classDef note fill:#fffde7,stroke:#fbc02d,stroke-width:1px,color:#795548
+
+    READ(["从上往下四步：造题 → 出答案 → 测判分器 → 看后果<br/>绿＝已完成　黄＝进行中"]):::note
+    A1["程序生成<br/>干净账套"]:::done
+    A2["6 个做手脚的算子<br/>对应 4 条审计认定"]:::done
+    B1["7 条核对规则"]:::done
+    B2["注入前后之差<br/>＝ 正确答案"]:::done
+    FIX["v5 修的：四档难度曾被压成一档<br/>现 4/4 分离，验收 PASS（0/600 误报）"]:::fixed
+    C1["干净账 → 误报率"]:::done
+    C2["做过手脚 → 漏报率"]:::done
+    C3["J = 1 − 误报 − 漏报"]:::done
+    G1{"闸门：最宽松档下漏报率 ≥ 0.20？<br/>判据跑之前写死"}:::gate
+    OUT2(["换方向"]):::wip
+    R1["flash 漏报 0.500<br/>pro　 漏报 0.380<br/>都远高于 0.20"]:::done
+    R2["更强的模型反而更危险<br/>pro J = −0.180<br/>flash J = +0.500"]:::find
+    R3["原因不是看不见，是乱报<br/>pro 误报率 0.800"]:::find
+    R4["诚实边界：pro 只有 40 个干净样本<br/>补到 120 个即可钉死（约 $2）"]:::wip
+    A0{"A0 主实验<br/>4 档 × ≥6 模型<br/>成本 $8–12"}:::gate
+
+    READ --> L1
+    L1 --> L2
+    B2 --> FIX
+    FIX --> L3
+    L3 --> G1
+    G1 -->|"不通过"| OUT2
+    G1 -->|"通过 GO"| R1
+    R1 --> R2 --> R3 --> R4 --> A0
+
+    subgraph L1["第 1 步 · 造题"]
+        direction LR
+        A1 --> A2
+    end
+
+    subgraph L2["第 2 步 · 出答案（不用人标）"]
+        direction LR
+        B1 --> B2
+    end
+
+    subgraph L3["第 3 步 · 测判分器"]
+        direction LR
+        C1 --> C2 --> C3
+    end

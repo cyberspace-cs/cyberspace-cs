@@ -1,0 +1,68 @@
+<svg viewBox="0 0 680 496" width="100%" role="img" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+<title>AuLE research architecture: synthesize, execute, distill</title>
+<desc>
+A three-lane pipeline. Lane 1 synthesizes tasks by injecting transformations into verified seed programs and differentially verifying them. Lane 2 executes the task package in a Harbor container with an agent and runs the verifier to get an exact reward. Lane 3 distils trajectories plus rewards into training data and a benchmark using DataFlow operators. A dashed line shows the verifier and label travelling free from synthesis to execution.</desc>
+<!-- LEGACY: LEGACY | v2 时代（构造 verifier）。v4 已改为「审计 verifier」，此图的主张不再有效，请看 fig4。 -->
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+</defs>
+
+<rect x="40" y="50" width="600" height="104" rx="12" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+<text x="60" y="72" font-size="13" font-weight="500" fill="#3C3489">① Synthesize · AuLE (ours)</text>
+<rect x="60" y="88" width="128" height="48" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.5"/>
+<text x="124" y="106" font-size="14" font-weight="500" fill="#3C3489" text-anchor="middle" dominant-baseline="central">Seed corpus</text>
+<text x="124" y="122" font-size="12" fill="#534AB7" text-anchor="middle" dominant-baseline="central">passes oracle</text>
+<rect x="208" y="88" width="128" height="48" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.5"/>
+<text x="272" y="106" font-size="14" font-weight="500" fill="#3C3489" text-anchor="middle" dominant-baseline="central">Injection</text>
+<text x="272" y="122" font-size="12" fill="#534AB7" text-anchor="middle" dominant-baseline="central">operator</text>
+<rect x="356" y="88" width="128" height="48" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.5"/>
+<text x="420" y="106" font-size="14" font-weight="500" fill="#3C3489" text-anchor="middle" dominant-baseline="central">Differential</text>
+<text x="420" y="122" font-size="12" fill="#534AB7" text-anchor="middle" dominant-baseline="central">verifier</text>
+<rect x="504" y="88" width="128" height="48" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.5"/>
+<text x="568" y="106" font-size="14" font-weight="500" fill="#3C3489" text-anchor="middle" dominant-baseline="central">Task package</text>
+<text x="568" y="122" font-size="12" fill="#534AB7" text-anchor="middle" dominant-baseline="central">instr + tests</text>
+<path d="M190 112 L206 112" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M338 112 L354 112" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M486 112 L502 112" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<rect x="40" y="198" width="600" height="104" rx="12" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="60" y="220" font-size="13" font-weight="500" fill="#0C447C">② Execute · Harbor</text>
+<rect x="504" y="236" width="128" height="48" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+<text x="568" y="254" font-size="14" font-weight="500" fill="#0C447C" text-anchor="middle" dominant-baseline="central">Harbor</text>
+<text x="568" y="270" font-size="12" fill="#185FA5" text-anchor="middle" dominant-baseline="central">container</text>
+<rect x="356" y="236" width="128" height="48" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+<text x="420" y="254" font-size="14" font-weight="500" fill="#0C447C" text-anchor="middle" dominant-baseline="central">Agent</text>
+<text x="420" y="270" font-size="12" fill="#185FA5" text-anchor="middle" dominant-baseline="central">rollout</text>
+<rect x="208" y="236" width="128" height="48" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+<text x="272" y="254" font-size="14" font-weight="500" fill="#0C447C" text-anchor="middle" dominant-baseline="central">Verifier</text>
+<text x="272" y="270" font-size="12" fill="#185FA5" text-anchor="middle" dominant-baseline="central">run</text>
+<rect x="60" y="236" width="128" height="48" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+<text x="124" y="254" font-size="14" font-weight="500" fill="#0C447C" text-anchor="middle" dominant-baseline="central">Reward r</text>
+<text x="124" y="270" font-size="12" fill="#185FA5" text-anchor="middle" dominant-baseline="central">exact, free</text>
+<path d="M502 260 L486 260" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M354 260 L338 260" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M206 260 L190 260" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<rect x="40" y="346" width="600" height="104" rx="12" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="60" y="368" font-size="13" font-weight="500" fill="#0C447C">③ Distill · DataFlow</text>
+<rect x="60" y="384" width="180" height="48" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+<text x="150" y="402" font-size="14" font-weight="500" fill="#0C447C" text-anchor="middle" dominant-baseline="central">Trajectories</text>
+<text x="150" y="418" font-size="12" fill="#185FA5" text-anchor="middle" dominant-baseline="central">+ reward r</text>
+<rect x="260" y="384" width="180" height="48" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+<text x="350" y="402" font-size="14" font-weight="500" fill="#0C447C" text-anchor="middle" dominant-baseline="central">DataFlow</text>
+<text x="350" y="418" font-size="12" fill="#185FA5" text-anchor="middle" dominant-baseline="central">gen/eval/filter</text>
+<rect x="460" y="384" width="180" height="48" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+<text x="550" y="402" font-size="14" font-weight="500" fill="#0C447C" text-anchor="middle" dominant-baseline="central">Training data</text>
+<text x="550" y="418" font-size="12" fill="#185FA5" text-anchor="middle" dominant-baseline="central">+ benchmark</text>
+<path d="M242 408 L258 408" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M442 408 L458 408" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<path d="M568 136 L568 232" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M124 284 L124 318 Q124 324 130 324 L144 324 Q150 324 150 330 L150 380" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M420 136 L420 168 Q420 174 414 174 L278 174 Q272 174 272 180 L272 232" fill="none" stroke="#534AB7" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+<text x="280" y="192" font-size="12" fill="#534AB7">verifier + label come with the task</text>
+
+<text x="60" y="472" font-size="12" fill="#5F5E5A">Solid = data flow · Dashed = the constructive label: not judged, but produced by the injection itself.</text>
+</svg>
