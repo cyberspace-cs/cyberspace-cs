@@ -3,8 +3,8 @@
 > 从零到一实现一个 **飞书 / 钉钉 B 端风格** 的即时消息系统：扩散读 + 会话红点水位线 + **单条消息已读回执**。
 > 代码逐条对应「大厂 IM 系统设计对比」，是面试时横向对比 Redis+MySQL 选型的最佳样本。
 
-- GitHub：https://github.com/cyberspace-cs/cyberspace-cs
-- Gitee：https://gitee.com/buleboy8065/cyberspace-cs
+- GitHub：https://github.com/cyberspace-cs/cyberspace-cs （**本 IM 项目位于 `im/` 子目录**，与原仓库其它项目共存）
+- Gitee：https://gitee.com/buleboy8065/cyberspace-cs （独立仓库，IM 项目在根目录）
 - 线上演示（部署后）：http://taoxie.vip/im/
 
 ---
@@ -28,14 +28,23 @@
 ## 2. 快速开始（本地 Docker 一键起）
 
 ```bash
+cd im                          # GitHub 仓库需先进入 im/ 子目录（Gitee 仓库在根目录，无需 cd）
 docker compose up -d          # 起 MySQL8 + Redis7 + IM 服务
 curl -X POST http://localhost:8080/api/seed   # 灌入演示数据（4 用户 + 单聊 + 群聊）
 # 浏览器打开 http://localhost:8080/ ，分别在两个窗口选不同身份登录即可体验
 ```
 
+端到端冒烟测试（需服务已启动，验证飞书式已读回执全链路）：
+
+```bash
+cd im
+go run ./cmd/smoke            # Alice 发群消息 → Bob/Carol 收到 → 已读 → Alice 收回报执
+```
+
 手动构建运行：
 
 ```bash
+cd im
 export MYSQL_DSN='root:rootpass@tcp(127.0.0.1:3306)/im?parseTime=true&charset=utf8mb4&loc=Local'
 export REDIS_ADDR=127.0.0.1:6379
 go run ./cmd/server
