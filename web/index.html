@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cyberspace-cs · 飞书式 IM 教学 Demo</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">💬 cyberspace-cs <span class="sub">飞书式 · 单条已读回执 IM</span></div>
+    <div class="login">
+      <label>身份：</label>
+      <select id="uid">
+        <option value="1001">Alice 🦊 (1001)</option>
+        <option value="1002">Bob 🐼 (1002)</option>
+        <option value="1003">Carol 🐯 (1003)</option>
+        <option value="1004">Dave 🐧 (1004)</option>
+      </select>
+      <button id="loginBtn">登录 / 连接</button>
+      <span id="status" class="status off">未连接</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="conv-list" id="convList">
+      <div class="hint">登录后显示会话列表（红点=未读水位线）</div>
+    </aside>
+    <section class="chat">
+      <div class="chat-head" id="chatHead">请选择左侧会话</div>
+      <div class="messages" id="messages"></div>
+      <div class="composer">
+        <input id="msgInput" placeholder="输入消息，回车发送…" disabled />
+        <button id="sendBtn" disabled>发送</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="events">
+    <b>实时事件（回执/已读）：</b>
+    <div id="eventLog" class="event-log"></div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

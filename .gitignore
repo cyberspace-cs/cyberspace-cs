@@ -1,0 +1,5 @@
+/imserver
+/cyberspace-im
+*.exe
+.env
+mysql-data/
