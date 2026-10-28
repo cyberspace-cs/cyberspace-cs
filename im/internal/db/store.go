@@ -256,7 +256,9 @@ func (s *Store) GetReaders(ctx context.Context, msgID int64) ([]int64, error) {
 func (s *Store) ListConversationsForUser(ctx context.Context, uid int64, bigThreshold int) ([]model.ConversationView, error) {
 	rows, err := s.DB.QueryContext(ctx,
 		`SELECT c.conv_id,c.type,c.title,c.latest_seq,c.created_at,
-		        COALESCE(MAX(r.read_seq),0), COUNT(DISTINCT cm2.uid)
+		        COALESCE(MAX(r.read_seq),0), COUNT(DISTINCT cm2.uid),
+		        COALESCE((SELECT content FROM messages m WHERE m.conv_id=c.conv_id ORDER BY m.seq DESC LIMIT 1), ''),
+		        COALESCE((SELECT sender_uid FROM messages m WHERE m.conv_id=c.conv_id ORDER BY m.seq DESC LIMIT 1), 0)
 		 FROM conversation_members cm
 		 JOIN conversations c ON c.conv_id=cm.conv_id
 		 LEFT JOIN user_conv_read r ON r.conv_id=c.conv_id AND r.uid=?
@@ -270,7 +272,7 @@ func (s *Store) ListConversationsForUser(ctx context.Context, uid int64, bigThre
 	var out []model.ConversationView
 	for rows.Next() {
 		var v model.ConversationView
-		if err := rows.Scan(&v.ConvID, &v.Type, &v.Title, &v.LatestSeq, &v.CreatedAt, &v.ReadSeq, &v.MemberCnt); err != nil {
+		if err := rows.Scan(&v.ConvID, &v.Type, &v.Title, &v.LatestSeq, &v.CreatedAt, &v.ReadSeq, &v.MemberCnt, &v.LastContent, &v.LastSenderUID); err != nil {
 			return nil, err
 		}
 		v.Unread = v.LatestSeq - v.ReadSeq
@@ -279,6 +281,45 @@ func (s *Store) ListConversationsForUser(ctx context.Context, uid int64, bigThre
 		}
 		v.IsBig = bigThreshold > 0 && v.MemberCnt > bigThreshold
 		out = append(out, v)
+	}
+	return out, nil
+}
+
+// ListUsers 返回全部用户（uid/name/avatar）。
+func (s *Store) ListUsers(ctx context.Context) ([]model.User, error) {
+	rows, err := s.DB.QueryContext(ctx, `SELECT uid,name,avatar FROM users ORDER BY uid`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []model.User
+	for rows.Next() {
+		var u model.User
+		if err := rows.Scan(&u.UID, &u.Name, &u.Avatar); err != nil {
+			return nil, err
+		}
+		out = append(out, u)
+	}
+	return out, nil
+}
+
+// ListConvMembers 返回某会话的成员（带 name/avatar）。
+func (s *Store) ListConvMembers(ctx context.Context, convID int64) ([]model.User, error) {
+	rows, err := s.DB.QueryContext(ctx,
+		`SELECT u.uid,u.name,u.avatar
+		 FROM conversation_members cm JOIN users u ON u.uid=cm.uid
+		 WHERE cm.conv_id=? ORDER BY u.uid`, convID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []model.User
+	for rows.Next() {
+		var u model.User
+		if err := rows.Scan(&u.UID, &u.Name, &u.Avatar); err != nil {
+			return nil, err
+		}
+		out = append(out, u)
 	}
 	return out, nil
 }

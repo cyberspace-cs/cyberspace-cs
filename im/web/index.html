@@ -3,43 +3,127 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>cyberspace-cs · 飞书式 IM 教学 Demo</title>
+  <title>cyberspace-cs · 飞书式 IM</title>
   <link rel="stylesheet" href="app.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">💬 cyberspace-cs <span class="sub">飞书式 · 单条已读回执 IM</span></div>
-    <div class="login">
-      <label>身份：</label>
-      <select id="uid">
-        <option value="1001">Alice 🦊 (1001)</option>
-        <option value="1002">Bob 🐼 (1002)</option>
-        <option value="1003">Carol 🐯 (1003)</option>
-        <option value="1004">Dave 🐧 (1004)</option>
-      </select>
-      <button id="loginBtn">登录 / 连接</button>
-      <span id="status" class="status off">未连接</span>
-    </div>
-  </header>
-
-  <main class="layout">
-    <aside class="conv-list" id="convList">
-      <div class="hint">登录后显示会话列表（红点=未读水位线）</div>
-    </aside>
-    <section class="chat">
-      <div class="chat-head" id="chatHead">请选择左侧会话</div>
-      <div class="messages" id="messages"></div>
-      <div class="composer">
-        <input id="msgInput" placeholder="输入消息，回车发送…" disabled />
-        <button id="sendBtn" disabled>发送</button>
+  <!-- ============ 飞书式登录页 ============ -->
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="login-logo">飞</div>
+        <div>
+          <div class="login-title">cyberspace-cs · 飞书式 IM</div>
+          <div class="login-sub">单条已读回执 · 扩散读 · 会话水位线</div>
+        </div>
       </div>
-    </section>
-  </main>
+      <div class="login-hint">选择一个身份登录（教学演示，免密码）</div>
+      <div id="loginUsers" class="login-users"></div>
+      <div class="login-foot">提示：用两个浏览器窗口分别登录不同身份，即可体验「谁读了我的消息」已读回执</div>
+    </div>
+  </div>
 
-  <footer class="events">
-    <b>实时事件（回执/已读）：</b>
-    <div id="eventLog" class="event-log"></div>
-  </footer>
+  <!-- ============ 主界面 ============ -->
+  <div class="app" id="app" hidden>
+    <!-- 最左侧导航栏 -->
+    <nav class="rail" id="rail">
+      <div class="rail-logo" title="cyberspace-cs">飞</div>
+      <div class="rail-items">
+        <button class="rail-item active" data-nav="msg" title="消息">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9l-5 4V5a1 1 0 0 1 1-1z"/></svg>
+          <span>消息</span>
+        </button>
+        <button class="rail-item" data-nav="contacts" title="通讯录">
+          <svg viewBox="0 0 24 24"><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 19a6 6 0 0 1 12 0zm10-1a6 6 0 0 1 10 1"/></svg>
+          <span>通讯录</span>
+        </button>
+        <button class="rail-item" data-nav="docs" title="云文档">
+          <svg viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6V2zm8 1.5V7h3.5L14 3.5zM8 11h8v1.6H8zm0 4h8v1.6H8z"/></svg>
+          <span>云文档</span>
+        </button>
+        <button class="rail-item" data-nav="cal" title="日历">
+          <svg viewBox="0 0 24 24"><path d="M5 4h14a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm0 5h14M8 3v3m8-3v3M8 11h3v3H8z"/></svg>
+          <span>日历</span>
+        </button>
+        <button class="rail-item" data-nav="meet" title="视频会议">
+          <svg viewBox="0 0 24 24"><path d="M3 6h13a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zm15 3l4-2v10l-4-2V9z"/></svg>
+          <span>会议</span>
+        </button>
+      </div>
+      <div class="rail-bottom">
+        <button class="rail-item" data-nav="settings" title="设置">
+          <svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm9 4a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L16 2H8l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 3 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L8 22h8l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>
+          <span>设置</span>
+        </button>
+        <div class="rail-me" id="railMe" title="切换身份"></div>
+      </div>
+    </nav>
+
+    <!-- 会话列表 -->
+    <aside class="conv-col">
+      <div class="conv-head">
+        <div class="conv-title">消息</div>
+        <button class="icon-btn add-btn" id="addBtn" title="发起会话">＋</button>
+      </div>
+      <div class="conv-search">
+        <svg viewBox="0 0 24 24" class="search-ic"><path d="M10 4a6 6 0 1 0 3.8 10.6l4.3 4.3 1.4-1.4-4.3-4.3A6 6 0 0 0 10 4zm0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8z"/></svg>
+        <input id="convSearch" placeholder="搜索" />
+      </div>
+      <div class="conv-list" id="convList"></div>
+    </aside>
+
+    <!-- 聊天主区 -->
+    <main class="chat">
+      <header class="chat-head" id="chatHead">
+        <div class="chat-title">
+          <span id="chatName">IM 教学群</span>
+          <span class="chat-meta" id="chatMeta"></span>
+        </div>
+        <div class="chat-head-right">
+          <div class="head-avatars" id="headAvatars"></div>
+          <button class="icon-btn" id="memberBtn" title="群成员/信息">
+            <svg viewBox="0 0 24 24"><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 19a6 6 0 0 1 12 0zm10-1a6 6 0 0 1 10 1"/></svg>
+          </button>
+          <button class="icon-btn" id="searchBtn" title="聊天记录">
+            <svg viewBox="0 0 24 24"><path d="M10 4a6 6 0 1 0 3.8 10.6l4.3 4.3 1.4-1.4-4.3-4.3A6 6 0 0 0 10 4zm0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="chat-body">
+        <div class="messages" id="messages">
+          <div class="empty-hint" id="emptyHint">选择一个会话开始聊天</div>
+        </div>
+        <!-- 右抽屉：成员 / 回执说明 -->
+        <aside class="member-panel" id="memberPanel" hidden></aside>
+      </div>
+
+      <div class="composer" id="composer">
+        <div class="composer-bar">
+          <button class="icon-btn" id="emojiBtn" title="表情">😊</button>
+          <button class="icon-btn" title="图片">🖼️</button>
+          <button class="icon-btn" title="文件">📎</button>
+          <button class="icon-btn" title="提及">@</button>
+        </div>
+        <textarea id="msgInput" placeholder="输入消息，Enter 发送，Shift+Enter 换行" rows="1" disabled></textarea>
+        <div class="composer-foot">
+          <span class="composer-tip" id="composerTip"></span>
+          <button id="sendBtn" class="send-btn" disabled>发送</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============ 已读回执详情弹窗 ============ -->
+  <div id="receiptModal" class="modal" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <span id="receiptTitle">已读详情</span>
+        <button class="icon-btn" id="receiptClose">✕</button>
+      </div>
+      <div class="modal-body" id="receiptBody"></div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

@@ -251,6 +251,14 @@ func (s *Service) ListConversations(uid int64) ([]model.ConversationView, error)
 	return s.store.ListConversationsForUser(context.Background(), uid, s.cfg.BigGroupThreshold)
 }
 
+func (s *Service) ListUsers() ([]model.User, error) {
+	return s.store.ListUsers(context.Background())
+}
+
+func (s *Service) ListMembers(convID int64) ([]model.User, error) {
+	return s.store.ListConvMembers(context.Background(), convID)
+}
+
 func (s *Service) PullHistory(convID, beforeSeq int64, limit int) ([]model.Message, error) {
 	return s.store.ListMessages(context.Background(), convID, beforeSeq, limit)
 }

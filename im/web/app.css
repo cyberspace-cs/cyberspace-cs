@@ -1,34 +1,193 @@
-:root { --bg:#f5f6f8; --panel:#fff; --line:#e6e8eb; --blue:#3370ff; --red:#f53f3f; --txt:#1f2329; --mut:#8a8f99; }
-* { box-sizing:border-box; }
-body { margin:0; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; color:var(--txt); background:var(--bg); }
-.topbar { display:flex; justify-content:space-between; align-items:center; padding:10px 18px; background:var(--panel); border-bottom:1px solid var(--line); }
-.brand { font-weight:700; font-size:16px; }
-.brand .sub { font-weight:400; color:var(--mut); font-size:12px; margin-left:8px; }
-.login select, .login button { padding:6px 10px; border:1px solid var(--line); border-radius:6px; background:#fff; }
-.login button { background:var(--blue); color:#fff; border-color:var(--blue); cursor:pointer; }
-.status { margin-left:10px; font-size:12px; padding:3px 8px; border-radius:10px; }
-.status.on { background:#e8ffea; color:#18a058; }
-.status.off { background:#ffece8; color:var(--red); }
-.layout { display:flex; height:calc(100vh - 110px); }
-.conv-list { width:260px; border-right:1px solid var(--line); background:var(--panel); overflow:auto; }
-.hint { color:var(--mut); font-size:12px; padding:14px; }
-.conv { padding:12px 14px; border-bottom:1px solid var(--line); cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
-.conv.active { background:#eef3ff; }
-.conv .title { font-weight:600; }
-.conv .meta { font-size:12px; color:var(--mut); }
-.badge { background:var(--red); color:#fff; border-radius:10px; padding:1px 7px; font-size:12px; min-width:18px; text-align:center; }
-.chat { flex:1; display:flex; flex-direction:column; background:var(--bg); }
-.chat-head { padding:12px 16px; background:var(--panel); border-bottom:1px solid var(--line); font-weight:600; }
-.messages { flex:1; overflow:auto; padding:16px; }
-.msg { max-width:62%; margin-bottom:14px; padding:9px 12px; border-radius:10px; background:#fff; border:1px solid var(--line); word-break:break-word; }
-.msg.me { margin-left:auto; background:var(--blue); color:#fff; border-color:var(--blue); }
-.msg .who { font-size:11px; color:var(--mut); margin-bottom:3px; }
-.msg.me .who { color:#dfe7ff; }
-.receipt { font-size:11px; margin-top:4px; color:#0a9b4f; }
-.msg.me .receipt { color:#c9f7d8; }
-.composer { display:flex; gap:8px; padding:12px; background:var(--panel); border-top:1px solid var(--line); }
-.composer input { flex:1; padding:9px 12px; border:1px solid var(--line); border-radius:8px; }
-.composer button { padding:9px 18px; background:var(--blue); color:#fff; border:none; border-radius:8px; cursor:pointer; }
-.events { height:90px; border-top:1px solid var(--line); background:var(--panel); padding:8px 16px; }
-.event-log { font-size:12px; color:var(--mut); overflow:auto; height:60px; }
-.event-log div { padding:1px 0; }
+/* =========================================================================
+   cyberspace-cs 飞书式 IM 前端 · 设计令牌对齐飞书桌面客户端（浅色主题）
+   品牌色 #3370FF · 主文字 #1F2329 · 次文字 #646A73 · 边框 #DEE0E3
+   ========================================================================= */
+:root{
+  --fs-brand:#3370FF;
+  --fs-brand-hover:#245BDB;
+  --fs-brand-soft:#EAF0FF;
+  --fs-text-1:#1F2329;
+  --fs-text-2:#646A73;
+  --fs-text-3:#8F959E;
+  --fs-border:#DEE0E3;
+  --fs-bg-0:#FFFFFF;
+  --fs-bg-1:#FFFFFF;
+  --fs-bg-2:#F5F6F7;
+  --fs-bg-3:#F2F3F5;
+  --fs-rail:#2B2F36;
+  --fs-rail-active:#3370FF;
+  --fs-red:#F54A45;
+  --fs-green:#2EA121;
+  --fs-shadow:0 6px 24px rgba(31,35,41,.16);
+  --fs-radius:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",
+    "Helvetica Neue",Helvetica,Arial,sans-serif;
+  color:var(--fs-text-1);
+  background:var(--fs-bg-2);
+  font-size:14px;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+.icon-btn{width:32px;height:32px;border-radius:6px;display:inline-flex;align-items:center;
+  justify-content:center;color:var(--fs-text-2);font-size:16px;transition:.15s}
+.icon-btn:hover{background:rgba(31,35,41,.06);color:var(--fs-text-1)}
+.icon-btn svg{width:18px;height:18px;fill:currentColor}
+
+/* ---------------- 登录页 ---------------- */
+.login-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#3370ff 0%,#245bdb 100%)}
+.login-card{width:440px;background:#fff;border-radius:14px;padding:36px 40px;box-shadow:var(--fs-shadow)}
+.login-brand{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+.login-logo{width:48px;height:48px;border-radius:12px;background:var(--fs-brand);
+  color:#fff;font-size:24px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.login-title{font-size:18px;font-weight:600}
+.login-sub{font-size:12px;color:var(--fs-text-3);margin-top:2px}
+.login-hint{font-size:13px;color:var(--fs-text-2);margin-bottom:14px}
+.login-users{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.user-card{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--fs-border);
+  border-radius:10px;transition:.15s}
+.user-card:hover{border-color:var(--fs-brand);background:var(--fs-brand-soft);transform:translateY(-1px)}
+.login-foot{margin-top:20px;font-size:11px;color:var(--fs-text-3);line-height:1.6}
+
+/* ---------------- 三栏布局 ---------------- */
+.app{display:flex;height:100vh;background:var(--fs-bg-1)}
+/* 最左导航栏 */
+.rail{width:64px;background:var(--fs-rail);display:flex;flex-direction:column;align-items:center;
+  padding:14px 0;flex-shrink:0}
+.rail-logo{width:36px;height:36px;border-radius:9px;background:var(--fs-brand);color:#fff;
+  font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.rail-items{flex:1;display:flex;flex-direction:column;gap:6px;width:100%;align-items:center}
+.rail-item{width:52px;height:48px;border-radius:9px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;color:#A8ABB2;font-size:11px;transition:.15s}
+.rail-item svg{width:20px;height:20px;fill:currentColor}
+.rail-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.rail-item.active{background:var(--fs-rail-active);color:#fff}
+.rail-bottom{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:auto}
+.rail-me{width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,255,255,.5);
+  cursor:pointer;background:#fff;display:flex;align-items:center;justify-content:center;
+  font-weight:700;color:var(--fs-brand);font-size:14px}
+
+/* 会话列表 */
+.conv-col{width:300px;background:var(--fs-bg-2);border-right:1px solid var(--fs-border);
+  display:flex;flex-direction:column;flex-shrink:0}
+.conv-head{height:56px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;border-bottom:1px solid var(--fs-border)}
+.conv-title{font-size:16px;font-weight:600}
+.add-btn{width:28px;height:28px;font-size:20px;color:var(--fs-text-2);border-radius:6px}
+.add-btn:hover{background:rgba(31,35,41,.06)}
+.conv-search{position:relative;padding:8px 12px}
+.conv-search .search-ic{position:absolute;left:24px;top:50%;transform:translateY(-50%);
+  width:15px;height:15px;fill:var(--fs-text-3)}
+.conv-search input{width:100%;height:32px;border:1px solid transparent;background:var(--fs-bg-1);
+  border-radius:8px;padding:0 10px 0 32px;font-size:13px;outline:none;color:var(--fs-text-1)}
+.conv-search input:focus{border-color:var(--fs-brand);background:#fff}
+.conv-list{flex:1;overflow-y:auto}
+.conv{height:64px;display:flex;align-items:center;gap:10px;padding:0 12px;cursor:pointer;
+  position:relative;transition:.12s}
+.conv:hover{background:rgba(31,35,41,.04)}
+.conv.active{background:var(--fs-brand-soft)}
+.conv.active::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;
+  background:var(--fs-brand);border-radius:2px}
+.conv-info{flex:1;min-width:0}
+.conv-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-preview{font-size:12px;color:var(--fs-text-3);white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;margin-top:3px}
+.conv-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.conv-time{font-size:11px;color:var(--fs-text-3)}
+.badge{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--fs-red);
+  color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:600}
+
+/* 头像 */
+.avatar{width:40px;height:40px;border-radius:8px;color:#fff;font-weight:600;font-size:16px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;user-select:none}
+.avatar.sm{width:28px;height:28px;border-radius:6px;font-size:12px}
+.avatar.xs{width:22px;height:22px;border-radius:5px;font-size:10px}
+.avatar-wrap{position:relative;flex-shrink:0}
+.avatar-wrap .dot{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;
+  background:var(--fs-green);border:2px solid #fff}
+
+/* ---------------- 聊天主区 ---------------- */
+.chat{flex:1;display:flex;flex-direction:column;background:var(--fs-bg-1);min-width:0}
+.chat-head{height:56px;border-bottom:1px solid var(--fs-border);display:flex;align-items:center;
+  justify-content:space-between;padding:0 20px}
+.chat-title{display:flex;align-items:baseline;gap:10px}
+#chatName{font-size:16px;font-weight:600}
+.chat-meta{font-size:12px;color:var(--fs-text-3)}
+.chat-head-right{display:flex;align-items:center;gap:6px}
+.head-avatars{display:flex;align-items:center;margin-right:6px}
+.head-avatars .avatar.xs{margin-left:-6px;border:2px solid #fff}
+.head-avatars .avatar.xs:first-child{margin-left:0}
+
+.chat-body{flex:1;display:flex;min-height:0;position:relative}
+.messages{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:18px}
+.empty-hint{margin:auto;color:var(--fs-text-3);font-size:14px}
+
+/* 消息 */
+.msg{display:flex;gap:10px;max-width:74%}
+.msg .avatar{margin-top:2px}
+.msg.me{flex-direction:row-reverse;align-self:flex-end}
+.msg-name{font-size:12px;color:var(--fs-text-2);margin-bottom:4px}
+.bubble{background:var(--fs-bg-3);border-radius:10px;padding:9px 13px;font-size:14px;line-height:1.55;
+  color:var(--fs-text-1);word-break:break-word;white-space:pre-wrap}
+.msg.me .bubble{background:var(--fs-brand);color:#fff;border-top-right-radius:3px}
+.msg:not(.me) .bubble{border-top-left-radius:3px}
+.msg-col{display:flex;flex-direction:column;min-width:0}
+/* 已读回执行 */
+.receipt-line{font-size:11px;color:var(--fs-text-3);margin-top:4px;display:flex;align-items:center;
+  gap:5px;cursor:default}
+.msg.me .receipt-line{justify-content:flex-end}
+.receipt-line.read{cursor:pointer;color:var(--fs-brand)}
+.receipt-line.read:hover{text-decoration:underline}
+.receipt-avatars{display:inline-flex}
+.receipt-avatars .avatar.xs{margin-left:-5px;border:1.5px solid #fff}
+.receipt-avatars .avatar.xs:first-child{margin-left:0}
+
+/* 成员抽屉 */
+.member-panel{width:280px;background:var(--fs-bg-2);border-left:1px solid var(--fs-border);
+  overflow-y:auto;padding:18px 16px;flex-shrink:0}
+.panel-title{font-size:13px;font-weight:600;color:var(--fs-text-2);margin-bottom:12px;
+  display:flex;align-items:center;justify-content:space-between}
+.member{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:8px}
+.member:hover{background:rgba(31,35,41,.05)}
+.member .m-name{font-size:13px;font-weight:500;flex:1}
+.member .m-tag{font-size:11px;color:var(--fs-brand);background:var(--fs-brand-soft);
+  padding:1px 7px;border-radius:6px}
+.panel-note{margin-top:18px;font-size:12px;color:var(--fs-text-3);line-height:1.7;
+  background:#fff;border:1px solid var(--fs-border);border-radius:8px;padding:12px}
+.panel-note b{color:var(--fs-text-2)}
+.big-badge{display:inline-block;font-size:11px;color:#B76E00;background:#FFF3E0;
+  padding:2px 8px;border-radius:6px;margin-top:8px}
+
+/* 输入区 */
+.composer{border-top:1px solid var(--fs-border);padding:10px 16px 14px;background:var(--fs-bg-1)}
+.composer-bar{display:flex;gap:2px;margin-bottom:8px}
+.composer textarea{width:100%;border:none;outline:none;resize:none;font-size:14px;line-height:1.5;
+  max-height:160px;color:var(--fs-text-1);background:transparent;font-family:inherit}
+.composer-foot{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.composer-tip{font-size:11px;color:var(--fs-text-3)}
+.send-btn{background:var(--fs-brand);color:#fff;padding:7px 20px;border-radius:7px;font-size:13px;
+  font-weight:500;transition:.15s}
+.send-btn:hover{background:var(--fs-brand-hover)}
+.send-btn:disabled{background:#C9CDD4;cursor:not-allowed}
+
+/* 弹窗 */
+.modal{position:fixed;inset:0;background:rgba(31,35,41,.4);display:flex;align-items:center;
+  justify-content:center;z-index:50}
+.modal-card{width:420px;background:#fff;border-radius:12px;box-shadow:var(--fs-shadow);overflow:hidden}
+.modal-head{height:52px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 18px;border-bottom:1px solid var(--fs-border);font-weight:600}
+.modal-body{padding:18px;max-height:60vh;overflow-y:auto}
+.rd-section{font-size:12px;color:var(--fs-text-2);margin:14px 0 8px}
+.rd-section:first-child{margin-top:0}
+.rd-row{display:flex;align-items:center;gap:10px;padding:6px 4px}
+.rd-row .m-name{font-size:13px}
+
+/* 滚动条 */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#C9CDD4;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#A8ABB2}

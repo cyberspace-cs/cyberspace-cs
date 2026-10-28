@@ -44,6 +44,21 @@ func NewServer(svc *service.Service) http.Handler {
 		writeJSON(w, list, err)
 	})
 
+	mux.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
+		users, err := svc.ListUsers()
+		writeJSON(w, users, err)
+	})
+
+	mux.HandleFunc("/api/members", func(w http.ResponseWriter, r *http.Request) {
+		convID, _ := strconv.ParseInt(r.URL.Query().Get("conv_id"), 10, 64)
+		if convID == 0 {
+			http.Error(w, "conv_id required", 400)
+			return
+		}
+		members, err := svc.ListMembers(convID)
+		writeJSON(w, members, err)
+	})
+
 	mux.HandleFunc("/api/messages", func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		convID, _ := strconv.ParseInt(q.Get("conv_id"), 10, 64)

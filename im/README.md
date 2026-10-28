@@ -41,6 +41,32 @@ cd im
 go run ./cmd/smoke            # Alice 发群消息 → Bob/Carol 收到 → 已读 → Alice 收回报执
 ```
 
+### 界面：还原飞书桌面客户端风格
+
+前端（`web/`）刻意对齐**飞书桌面客户端浅色主题**，设计令牌与飞书一致：
+
+| 飞书元素 | 本项目实现 |
+| --- | --- |
+| 最左深色拉丝导航栏（消息/通讯录/云文档/日历/会议/设置） | `.rail` 深底白字，当前页蓝色高亮 |
+| 会话列表（头像 + 名称 + 最后一条消息预览 + 红点未读） | 红点由 `latest_seq - read_seq` 水位线驱动 |
+| 聊天主区（标题 + 成员头像 + 群成员抽屉） | 点击右上「成员」图标开右抽屉 |
+| **单条已读回执**（自己消息下方「已读 X/Y」+ 读者头像，可点开看谁已读/未读） | 飞书招牌能力，点开弹窗区分已读/未读成员 |
+| 品牌色 `#3370FF`、主文字 `#1F2329`、未读红 `#F54A45` | CSS 变量 `--fs-brand` 等 |
+
+> 体验方式：用**两个浏览器窗口**分别登录 Alice(1001) 与 Bob(1002)；Alice 在群里发消息，Bob 打开会话即触发「已读」，Alice 立刻看到自己消息下方的「已读 1/3」与 Bob 头像，点开可看完整已读/未读名单。
+
+### 对外接口
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/users` | 全部用户（uid/name/avatar） |
+| GET | `/api/conversations?uid=` | 会话列表，带未读水位线 + 最后一条消息预览 |
+| GET | `/api/messages?conv_id=&before_seq=&limit=` | 按 seq 拉历史（扩散读） |
+| GET | `/api/members?conv_id=` | 会话成员（用于头像、回执详情） |
+| GET | `/api/receipt?conv_id=&msg_id=` | 某条消息已读回执快照（读者 / 已读人数 / 应读人数） |
+| POST | `/api/seed` | 灌入演示数据 |
+| WS | `/ws` | 登录、收发消息、已读回执、未读水位线推送 |
+
 手动构建运行：
 
 ```bash
@@ -82,7 +108,7 @@ sequenceDiagram
 ### MySQL（持久化基准源）
 | 表 | 作用 | 关键字段 |
 | --- | --- | --- |
-| `users` | 用户 | uid, name |
+| `users` | 用户 | uid, name, avatar |
 | `conversations` | 会话 | conv_id, type(1单聊/2群), **latest_seq** |
 | `conversation_members` | 成员关系 | conv_id, uid |
 | `messages` | 消息（**单副本扩散读**） | msg_id, conv_id, sender_uid, **seq（UNIQUE(conv_id,seq)）** |

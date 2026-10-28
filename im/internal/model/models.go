@@ -39,9 +39,11 @@ type Message struct {
 // ConversationView 带某个用户的未读水位线视图（用于会话列表红点）。
 type ConversationView struct {
 	Conversation
-	ReadSeq int64 `json:"read_seq"` // 用户已读到的 seq
-	Unread  int64 `json:"unread"`   // latest_seq - read_seq
-	IsBig   bool  `json:"is_big"`   // 超大群降级：不维护精确离线缓冲
+	ReadSeq        int64  `json:"read_seq"`         // 用户已读到的 seq
+	Unread         int64  `json:"unread"`           // latest_seq - read_seq
+	IsBig          bool   `json:"is_big"`           // 超大群降级：不维护精确离线缓冲
+	LastContent    string `json:"last_content"`     // 最近一条消息预览
+	LastSenderUID  int64  `json:"last_sender_uid"`  // 最近一条消息发送者
 }
 
 // Receipt 单条消息已读回执快照（飞书式）。
