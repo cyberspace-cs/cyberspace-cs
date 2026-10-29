@@ -6,6 +6,7 @@
 - GitHub：https://github.com/cyberspace-cs/cyberspace-cs （**本 IM 项目位于 `im/` 子目录**，与原仓库其它项目共存）
 - Gitee：https://gitee.com/buleboy8065/cyberspace-cs （独立仓库，IM 项目在根目录）
 - 线上演示（部署后）：http://taoxie.vip/im/
+- **系统设计与成本账**：见 [DESIGN.md](DESIGN.md)（六条链路、Redis/MySQL 逐 key 设计、内存与写入放大测算）
 
 ---
 

@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="720" viewBox="0 0 1240 720" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Noto Sans CJK SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3370FF"/>
+    </marker>
+    <marker id="red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#F54A45"/>
+    </marker>
+    <marker id="green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#00B42A"/>
+    </marker>
+  </defs>
+
+  <rect width="1240" height="720" fill="#FFFFFF"/>
+  <text x="44" y="48" font-size="24" font-weight="700" fill="#1F2329">IM 系统链路：扩散读 + 水位线 + 单条已读回执</text>
+  <text x="44" y="74" font-size="13" fill="#646A73">消息只存一份；未读靠减法算；回执只记「谁读了」，且只推给发送者。热点进 Redis，事务与审计进 MySQL。</text>
+
+  <!-- 回推路径（先画，避免盖住文字） -->
+  <path d="M 1040 128 L 1040 108 L 162 108 L 162 136" fill="none" stroke="#F54A45" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#red)"/>
+  <text x="300" y="101" font-size="11.5" fill="#F54A45">推送 message / receipt / unread：回执只发发送者（1 次，而不是 49 次广播）</text>
+
+  <!-- 客户端 -->
+  <rect x="44" y="140" width="236" height="104" rx="10" fill="#FFFFFF" stroke="#D6D9DE"/>
+  <text x="64" y="168" font-size="14" font-weight="600" fill="#1F2329">客户端 A（发送者）</text>
+  <text x="64" y="192" font-size="12" fill="#646A73">WebSocket 长连接</text>
+  <text x="64" y="214" font-size="12" fill="#646A73">消息下方显示「已读 12/49」</text>
+  <text x="64" y="232" font-size="11" fill="#8F959E">只上报「读到 seq=N」，不上报逐条</text>
+
+  <!-- 网关 -->
+  <rect x="380" y="140" width="256" height="104" rx="10" fill="#FFFFFF" stroke="#D6D9DE"/>
+  <text x="400" y="168" font-size="14" font-weight="600" fill="#1F2329">WS Gateway · Hub</text>
+  <text x="400" y="192" font-size="12" fill="#646A73">登录注册 uid → 连接</text>
+  <text x="400" y="214" font-size="12" fill="#646A73">按用户频道订阅 Pub/Sub</text>
+  <text x="400" y="232" font-size="11" fill="#8F959E">多机部署时做跨节点投递</text>
+
+  <!-- 服务 -->
+  <rect x="736" y="140" width="400" height="104" rx="10" fill="#FFFFFF" stroke="#D6D9DE"/>
+  <text x="756" y="168" font-size="14" font-weight="600" fill="#1F2329">Service 业务层</text>
+  <text x="756" y="192" font-size="12" fill="#646A73">发送：事务内 FOR UPDATE 分配单调 seq</text>
+  <text x="756" y="214" font-size="12" fill="#646A73">已读：推进水位线 + 写回执 + 推发送者</text>
+  <text x="756" y="232" font-size="11" fill="#8F959E">降级：&gt;200 人群只推水位线，不写单条回执</text>
+
+  <!-- 请求箭头 -->
+  <line x1="280" y1="192" x2="374" y2="192" stroke="#3370FF" stroke-width="2" marker-end="url(#blue)"/>
+  <text x="290" y="184" font-size="11" fill="#3370FF">send / read</text>
+
+  <line x1="636" y1="192" x2="730" y2="192" stroke="#3370FF" stroke-width="2" marker-end="url(#blue)"/>
+  <text x="648" y="184" font-size="11" fill="#3370FF">转发</text>
+
+  <!-- Service -> Redis -->
+  <path d="M 760 244 L 760 272 L 314 272 L 314 300" fill="none" stroke="#00B42A" stroke-width="2" marker-end="url(#green)"/>
+  <text x="330" y="266" font-size="11" fill="#00A02A">② SET latest / 用户 read / SADD readers＋SETBIT</text>
+
+  <!-- Service -> MySQL -->
+  <path d="M 980 244 L 980 300" fill="none" stroke="#3370FF" stroke-width="2" marker-end="url(#blue)"/>
+  <text x="992" y="272" font-size="11" fill="#3370FF">③ 发送事务 / 回执落库</text>
+
+  <!-- Redis -->
+  <rect x="44" y="304" width="540" height="352" rx="12" fill="#FFF7F5" stroke="#F9C9C4"/>
+  <text x="66" y="334" font-size="15" font-weight="700" fill="#C93B36">Redis · 热数据</text>
+  <text x="186" y="334" font-size="11" fill="#A85550">目标：O(1) 读、O(1) 写、内存可控</text>
+
+  <g font-size="11.5" fill="#1F2329" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">
+    <rect x="66" y="348" width="496" height="42" rx="6" fill="#FFFFFF" stroke="#F3DDDA"/>
+    <text x="78" y="366" font-size="11" fill="#646A73">String</text>
+    <text x="78" y="382">im:conv:{cid}:latest</text>
+    <text x="330" y="374" fill="#8F959E">会话最新 seq · 旁路缓存</text>
+
+    <rect x="66" y="396" width="496" height="42" rx="6" fill="#FFFFFF" stroke="#F3DDDA"/>
+    <text x="78" y="414" font-size="11" fill="#646A73">String</text>
+    <text x="78" y="430">im:user:{uid}:conv:{cid}:read</text>
+    <text x="330" y="422" fill="#8F959E">我的水位线 · 未读 = latest − 它</text>
+
+    <rect x="66" y="444" width="496" height="46" rx="6" fill="#FFFFFF" stroke="#F9C9C4"/>
+    <text x="78" y="462" font-size="11" fill="#C93B36">Set ★</text>
+    <text x="78" y="480">im:msg:{mid}:readers</text>
+    <text x="330" y="472" fill="#8F959E">已读这条的人（取名单/头像）</text>
+
+    <rect x="66" y="496" width="496" height="46" rx="6" fill="#FFFFFF" stroke="#F9C9C4"/>
+    <text x="78" y="514" font-size="11" fill="#C93B36">Bitmap ★</text>
+    <text x="78" y="532">im:msg:{mid}:rb</text>
+    <text x="330" y="524" fill="#8F959E">按成员位图算人数 BITCOUNT</text>
+
+    <rect x="66" y="548" width="496" height="42" rx="6" fill="#FFFFFF" stroke="#F3DDDA"/>
+    <text x="78" y="566" font-size="11" fill="#646A73">List</text>
+    <text x="78" y="582">im:user:{uid}:offline:{cid}</text>
+    <text x="330" y="574" fill="#8F959E">离线环，只留最近 30 条</text>
+
+    <rect x="66" y="596" width="496" height="42" rx="6" fill="#FFFFFF" stroke="#F3DDDA"/>
+    <text x="78" y="614" font-size="11" fill="#646A73">Pub/Sub</text>
+    <text x="78" y="630">im:user:{uid}</text>
+    <text x="330" y="622" fill="#8F959E">跨节点投递总线 · gateways Set 记路由</text>
+  </g>
+
+  <!-- MySQL -->
+  <rect x="620" y="304" width="576" height="352" rx="12" fill="#F5F9FF" stroke="#C6DAFF"/>
+  <text x="642" y="334" font-size="15" font-weight="700" fill="#2B5FD9">MySQL · 冷数据</text>
+  <text x="762" y="334" font-size="11" fill="#5B7FC7">目标：只做基准源、事务、审计，不做高频计数</text>
+
+  <g font-size="11.5" fill="#1F2329">
+    <rect x="642" y="348" width="532" height="66" rx="6" fill="#FFFFFF" stroke="#D6E4FF"/>
+    <text x="656" y="366" font-size="11" fill="#646A73">messages</text>
+    <text x="656" y="384" font-family="ui-monospace,Menlo,monospace">(msg_id, conv_id, sender_uid, seq, content)</text>
+    <text x="656" y="402" font-size="11" fill="#8F959E">单副本扩散读 · UNIQUE(conv_id, seq) 保证会话内 seq 单调唯一</text>
+
+    <rect x="642" y="420" width="532" height="42" rx="6" fill="#FFFFFF" stroke="#D6E4FF"/>
+    <text x="656" y="438" font-size="11" fill="#646A73">conversations</text>
+    <text x="656" y="454" font-family="ui-monospace,Menlo,monospace">(conv_id, type, title, latest_seq)</text>
+    <text x="972" y="446" fill="#8F959E" font-size="11">发消息只在事务里 +1</text>
+
+    <rect x="642" y="468" width="532" height="42" rx="6" fill="#FFFFFF" stroke="#D6E4FF"/>
+    <text x="656" y="486" font-size="11" fill="#646A73">conversation_members</text>
+    <text x="656" y="502" font-family="ui-monospace,Menlo,monospace">(conv_id, uid)</text>
+    <text x="972" y="494" fill="#8F959E" font-size="11">应读人数 = 成员数 − 1</text>
+
+    <rect x="642" y="516" width="532" height="52" rx="6" fill="#FFFFFF" stroke="#D6E4FF"/>
+    <text x="656" y="534" font-size="11" fill="#646A73">user_conv_read ★ 水位线</text>
+    <text x="656" y="552" font-family="ui-monospace,Menlo,monospace">(uid, conv_id, read_seq)</text>
+    <text x="972" y="544" fill="#8F959E" font-size="11">一行/人/会话 · 红点基准</text>
+
+    <rect x="642" y="574" width="532" height="72" rx="6" fill="#FFFFFF" stroke="#C6DAFF"/>
+    <text x="656" y="592" font-size="11" fill="#2B5FD9">user_msg_read ★ 单条回执明细</text>
+    <text x="656" y="610" font-family="ui-monospace,Menlo,monospace">(conv_id, msg_id, uid, read_at)</text>
+    <text x="656" y="628" font-size="11" fill="#8F959E">唯一键 (msg_id,uid) 幂等；只存「读过」，不存未读</text>
+    <text x="656" y="642" font-size="11" fill="#8F959E">7 天后归档 user_msg_read_cold，热表只留近期</text>
+  </g>
+
+  <text x="44" y="690" font-size="11.5" fill="#646A73">成本要点：不建「未读计数表」——否则一条消息要写 N 个成员；回执只存已读、不存未读；超大群直接降级为水位线。</text>
+</svg>
