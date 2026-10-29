@@ -93,6 +93,19 @@ func NewServer(svc *service.Service) http.Handler {
 		writeJSON(w, map[string]int64{"p2p_conv": p, "group_conv": g}, err)
 	})
 
+	mux.HandleFunc("/api/seed_big", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "POST only", 405)
+			return
+		}
+		n, _ := strconv.Atoi(r.URL.Query().Get("n"))
+		if n <= 0 {
+			n = 50
+		}
+		g, err := svc.SeedBig(n)
+		writeJSON(w, map[string]interface{}{"group_conv": g, "members": n}, err)
+	})
+
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {

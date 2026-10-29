@@ -324,6 +324,42 @@ func (s *Store) ListConvMembers(ctx context.Context, convID int64) ([]model.User
 	return out, nil
 }
 
+// SeedBig 灌入 n 个用户 + 1 个 n 人群（用于「未读数快速获取」压测演示）。
+// 返回群聊 convID。已存在则直接返回已有群。
+func (s *Store) SeedBig(ctx context.Context, n int) (int64, error) {
+	if n < 2 {
+		n = 50
+	}
+	// 幂等：已存在「压测群」则复用
+	var exists int64
+	_ = s.DB.QueryRowContext(ctx,
+		`SELECT conv_id FROM conversations WHERE title=? LIMIT 1`, "未读压测群").Scan(&exists)
+	if exists > 0 {
+		return exists, nil
+	}
+	members := make([]int64, 0, n)
+	for i := 1; i <= n; i++ {
+		uid := int64(2000 + i)
+		if err := s.UpsertUser(ctx, model.User{
+			UID:    uid,
+			Name:   "User" + fmt.Sprintf("%02d", i),
+			Avatar: "👤",
+		}); err != nil {
+			return 0, err
+		}
+		members = append(members, uid)
+	}
+	convID, err := s.CreateConversation(ctx, 2, "未读压测群", members)
+	if err != nil {
+		return 0, err
+	}
+	// 预置一条群消息，便于演示回执
+	if _, _, err := s.InsertMessage(ctx, convID, members[0], "这是 50 人压测群的第一条消息，用于演示未读数快速获取 🚀", 1); err != nil {
+		return 0, err
+	}
+	return convID, nil
+}
+
 // ---- 演示数据 ----
 
 // SeedDemo 在用户表为空时灌入 4 个用户 + 1 个单聊 + 1 个群聊。

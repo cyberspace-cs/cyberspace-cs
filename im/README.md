@@ -41,6 +41,16 @@ cd im
 go run ./cmd/smoke            # Alice 发群消息 → Bob/Carol 收到 → 已读 → Alice 收回报执
 ```
 
+**50 人规模「未读数快速获取」基准测试**（需服务已启动）：
+
+```bash
+curl -X POST "http://localhost:8080/api/seed_big?n=50"   # 灌入 50 人压测群
+go run ./cmd/bench_unread     # 对比「水位线减法 O(1)」vs「朴素 COUNT(*) O(n)」，并测 SCARD/SMEMBERS
+```
+
+实测结论（50 人群、会话 4001 条消息）：49 人批量取未读，水位线 6.3 ms vs COUNT 31 ms（≈4.9×）；
+未读越大差距越大（未读 4001 条时 ≈7.2×），水位线耗时恒定不随消息数增长。
+
 ### 界面：还原飞书桌面客户端风格
 
 前端（`web/`）刻意对齐**飞书桌面客户端浅色主题**，设计令牌与飞书一致：

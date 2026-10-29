@@ -280,6 +280,10 @@ func (s *Service) Seed() (int64, int64, error) {
 	return s.store.SeedDemo(context.Background())
 }
 
+func (s *Service) SeedBig(n int) (int64, error) {
+	return s.store.SeedBig(context.Background(), n)
+}
+
 // ---- 推送载荷结构 ----
 
 type WelcomeData struct {
