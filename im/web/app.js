@@ -180,6 +180,11 @@ async function openConv(convId) {
   $('composerTip').textContent = c.is_big ? '超大群：已降级，仅推进红点、不维护精确单条回执'
     : '消息已开启单条已读回执（飞书式）';
   sendRead(convId, c.latest_seq); // 打开即已读 -> 触发服务端给发送者回执
+  // 乐观清零红点：不依赖服务端 unread 回推（首连订阅存在毫秒级竞态）
+  if (c) {
+    c.read_seq = Math.max(c.read_seq || 0, c.latest_seq || 0);
+    c.unread = 0;
+  }
   renderConvList();
 }
 
@@ -260,15 +265,23 @@ async function openReceiptModal(convId, msgId) {
   $('receiptTitle').textContent = `已读详情（${rc.read_count}/${rc.total}）`;
   const body = $('receiptBody');
   body.innerHTML = '';
+  body.classList.add('rd-cols');
   const readList = members.filter((u) => readers.has(u.uid));
   const unreadList = members.filter((u) => u.uid !== senderUID && !readers.has(u.uid));
 
-  const section = (title, arr) => {
-    if (!arr.length) return;
+  // 飞书式双列：左「已读」右「未读」，一屏看全，不必来回滚动
+  const col = (title, arr) => {
+    const c = document.createElement('div');
+    c.className = 'rd-col';
     const h = document.createElement('div');
-    h.className = 'rd-section';
-    h.textContent = title;
-    body.appendChild(h);
+    h.className = 'rd-col-head';
+    h.innerHTML = `<span>${title}</span><b>${arr.length}</b>`;
+    c.appendChild(h);
+    const list = document.createElement('div');
+    list.className = 'rd-col-list';
+    if (!arr.length) {
+      list.innerHTML = '<div class="empty-hint">暂无</div>';
+    }
     arr.forEach((u) => {
       const row = document.createElement('div');
       row.className = 'rd-row';
@@ -277,14 +290,13 @@ async function openReceiptModal(convId, msgId) {
       nm.className = 'm-name';
       nm.textContent = (u.uid === state.uid ? '我（' + u.name + '）' : u.name);
       row.appendChild(nm);
-      body.appendChild(row);
+      list.appendChild(row);
     });
+    c.appendChild(list);
+    body.appendChild(c);
   };
-  section(`已读（${readList.length}）`, readList);
-  section(`未读（${unreadList.length}）`, unreadList);
-  if (!readList.length && !unreadList.length) {
-    body.innerHTML = '<div class="empty-hint">暂无成员信息</div>';
-  }
+  col('已读', readList);
+  col('未读', unreadList);
   $('receiptModal').hidden = false;
 }
 
@@ -374,7 +386,10 @@ function autoGrow() {
 // ---------- 绑定 ----------
 async function boot() {
   window.state = state; // 暴露便于调试 / 自动化（教学项目无妨）
-  state.users = await getJSON('users');
+  // 注意：接口返回的是数组，这里必须转成 uid -> user 的映射，
+  // 否则 nameOf(uid) 按 uid 取值会取不到（数组下标与 uid 并不一致）。
+  state.users = {};
+  (await getJSON('users')).forEach((u) => { state.users[u.uid] = u; });
   renderLoginUsers();
 
   $('railMe').onclick = () => {
