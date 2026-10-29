@@ -51,6 +51,9 @@ func NewStore(dsn string) (*Store, error) {
 	if _, err := db.Exec(schemaSQL); err != nil {
 		return nil, fmt.Errorf("init schema: %w", err)
 	}
+	if err := s.migrate(context.Background()); err != nil {
+		return nil, fmt.Errorf("migrate: %w", err)
+	}
 	return s, nil
 }
 
@@ -119,6 +122,11 @@ func (s *Store) CountMembers(ctx context.Context, convID int64) (int, error) {
 // InsertMessage 在事务内分配 seq 并落库，返回 (msg_id, seq)。
 // 用 SELECT ... FOR UPDATE 锁住会话行，避免并发分配出重复 seq。
 func (s *Store) InsertMessage(ctx context.Context, convID, senderUID int64, content string, msgType int) (int64, int64, error) {
+	return s.InsertMessageFull(ctx, convID, senderUID, content, msgType, 0, nil)
+}
+
+// InsertMessageFull 带「引用回复 / @提及」的完整版本。
+func (s *Store) InsertMessageFull(ctx context.Context, convID, senderUID int64, content string, msgType int, replyTo int64, atUIDs []int64) (int64, int64, error) {
 	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, 0, err
@@ -135,8 +143,8 @@ func (s *Store) InsertMessage(ctx context.Context, convID, senderUID int64, cont
 		return 0, 0, err
 	}
 	res, err := tx.ExecContext(ctx,
-		`INSERT INTO messages(conv_id,sender_uid,seq,content,msg_type) VALUES(?,?,?,?,?)`,
-		convID, senderUID, newSeq, content, msgType)
+		`INSERT INTO messages(conv_id,sender_uid,seq,content,msg_type,reply_to,at_uids) VALUES(?,?,?,?,?,?,?)`,
+		convID, senderUID, newSeq, content, msgType, replyTo, joinUIDs(atUIDs))
 	if err != nil {
 		return 0, 0, err
 	}
@@ -153,7 +161,7 @@ func (s *Store) ListMessages(ctx context.Context, convID, beforeSeq int64, limit
 		limit = 50
 	}
 	rows, err := s.DB.QueryContext(ctx,
-		`SELECT msg_id,conv_id,sender_uid,seq,content,msg_type,created_at
+		`SELECT msg_id,conv_id,sender_uid,seq,content,msg_type,reply_to,COALESCE(at_uids,''),recalled,created_at
 		 FROM messages WHERE conv_id=? AND seq<=? ORDER BY seq DESC LIMIT ?`,
 		convID, beforeSeq, limit)
 	if err != nil {
@@ -162,8 +170,8 @@ func (s *Store) ListMessages(ctx context.Context, convID, beforeSeq int64, limit
 	defer rows.Close()
 	var out []model.Message
 	for rows.Next() {
-		var m model.Message
-		if err := rows.Scan(&m.MsgID, &m.ConvID, &m.SenderUID, &m.Seq, &m.Content, &m.Type, &m.CreatedAt); err != nil {
+		m, err := scanMessage(rows)
+		if err != nil {
 			return nil, err
 		}
 		out = append(out, m)
@@ -174,7 +182,7 @@ func (s *Store) ListMessages(ctx context.Context, convID, beforeSeq int64, limit
 // MessagesInRange 取 [lo, hi] 区间内、按 seq 正序的消息（用于「已读」批量写回执）。
 func (s *Store) MessagesInRange(ctx context.Context, convID, lo, hi int64) ([]model.Message, error) {
 	rows, err := s.DB.QueryContext(ctx,
-		`SELECT msg_id,conv_id,sender_uid,seq,content,msg_type,created_at
+		`SELECT msg_id,conv_id,sender_uid,seq,content,msg_type,reply_to,COALESCE(at_uids,''),recalled,created_at
 		 FROM messages WHERE conv_id=? AND seq BETWEEN ? AND ? ORDER BY seq ASC`,
 		convID, lo, hi)
 	if err != nil {
@@ -183,8 +191,8 @@ func (s *Store) MessagesInRange(ctx context.Context, convID, lo, hi int64) ([]mo
 	defer rows.Close()
 	var out []model.Message
 	for rows.Next() {
-		var m model.Message
-		if err := rows.Scan(&m.MsgID, &m.ConvID, &m.SenderUID, &m.Seq, &m.Content, &m.Type, &m.CreatedAt); err != nil {
+		m, err := scanMessage(rows)
+		if err != nil {
 			return nil, err
 		}
 		out = append(out, m)
@@ -193,12 +201,10 @@ func (s *Store) MessagesInRange(ctx context.Context, convID, lo, hi int64) ([]mo
 }
 
 func (s *Store) GetMessage(ctx context.Context, convID, msgID int64) (model.Message, error) {
-	var m model.Message
-	err := s.DB.QueryRowContext(ctx,
-		`SELECT msg_id,conv_id,sender_uid,seq,content,msg_type,created_at
-		 FROM messages WHERE conv_id=? AND msg_id=?`, convID, msgID).
-		Scan(&m.MsgID, &m.ConvID, &m.SenderUID, &m.Seq, &m.Content, &m.Type, &m.CreatedAt)
-	return m, err
+	row := s.DB.QueryRowContext(ctx,
+		`SELECT msg_id,conv_id,sender_uid,seq,content,msg_type,reply_to,COALESCE(at_uids,''),recalled,created_at
+		 FROM messages WHERE conv_id=? AND msg_id=?`, convID, msgID)
+	return scanMessage(row)
 }
 
 func (s *Store) GetLatestSeq(ctx context.Context, convID int64) (int64, error) {

@@ -194,3 +194,36 @@ internal/api              REST + WS 升级
 web/                     演示前端（红点 + 已读回执展示）
 docker-compose.yml / Dockerfile / nginx.conf / deploy.sh
 ```
+
+## v2 能力清单（对齐飞书桌面端）
+
+后端从 9 个接口扩到 28 个，前端从单页扩到「消息 + 通讯录」双页。
+
+| 域 | 接口 | 说明 |
+|---|---|---|
+| 认证 | `POST /auth/login` `POST /auth/logout` `GET /auth/me` | 签发 token（sessions 表），后续请求带 `Authorization: Bearer`；无 token 时回落 `?uid=` 仅作教学脚本兼容 |
+| 会话 | `POST /conversations` | 建单聊/群聊，单聊自动复用已有会话 |
+| 成员 | `POST /conversations/members` | add / remove / leave，自动发一条系统消息 |
+| 设置 | `POST /conversations/settings` | 置顶 / 免打扰 / 标记未读 |
+| 消息 | `GET /messages?after_seq=` | 增量补拉（断线重连、多端同步） |
+| 消息 | `POST /messages/recall` | 2 分钟内、仅发送者，越权拦截 |
+| 消息 | `POST /messages/reaction` | 表情回应，同人同表情再点即取消 |
+| 消息 | `POST /messages/forward` | 转发到多个会话 |
+| 回执 | `GET /receipt?offset=&limit=` | 名单分页，大群只渲染一屏 |
+| 汇总 | `GET /unread/summary` | 总未读 / 有未读会话数 / @我 / 单聊 / 群聊 |
+| 搜索 | `GET /search?q=&scope=` | 消息 + 联系人 + 群组三路合并 |
+| 提及 | `GET /mentions` | @我的消息 |
+| 同步 | `GET /read/state` | 多端已读位置一次拉齐 |
+| 在线 | `GET /presence?conv_id=` | 会话内在线成员 |
+| 名片 | `GET /user?uid=` `GET /org/tree` | 部门 / 职位 / 邮箱 + 组织架构树 |
+| 上传 | `POST /upload` | 图片/文件，落 `web/uploads/` |
+| 通知 | `GET /notifications` `POST /notifications/read` | 与业务消息分流的通知中心 |
+
+WebSocket 新增 `typing`（正在输入）、`recall`、`reaction`、`presence` 事件；`send` 支持 `reply_to` / `at_uids` / `files`。
+
+前端新增：会话 tab（全部/未读/@我）、置顶分组、免打扰、未读胶囊、引用回复、@提及、
+表情回应、图片文件、撤回、转发、已读回执双列弹窗、全局搜索、通知抽屉、名片、通讯录。
+
+数据库：`messages` 加 `reply_to/at_uids/recalled`，`users` 加 `dept/dept_id/dept_title/email/phone`，
+新增 `conv_settings` / `reactions` / `attachments` / `notifications` / `sessions` / `departments` 六张表。
+旧库用 `internal/db/migrate.go` 做幂等补列，不需要重建。

@@ -94,6 +94,21 @@ func (s *Service) Handle(c *ws.Client, payload []byte) {
 		if json.Unmarshal(env.Data, &r) == nil {
 			s.Sync(c, r)
 		}
+	case protocol.TypeRecall:
+		var r protocol.RecallReq
+		if json.Unmarshal(env.Data, &r) == nil {
+			s.Recall(c, r)
+		}
+	case protocol.TypeReaction:
+		var r protocol.ReactionReq
+		if json.Unmarshal(env.Data, &r) == nil {
+			s.React(c, r)
+		}
+	case protocol.TypeTyping:
+		var r protocol.TypingReq
+		if json.Unmarshal(env.Data, &r) == nil {
+			s.Typing(c, r)
+		}
 	case protocol.TypePing:
 		s.sendSelf(c, protocol.TypePong, nil)
 	}
@@ -141,14 +156,26 @@ func (s *Service) Send(c *ws.Client, req protocol.SendReq) {
 	if msgType == 0 {
 		msgType = 1
 	}
-	msgID, seq, err := s.store.InsertMessage(ctx, convID, uid, req.Content, msgType)
+	msgID, seq, err := s.store.InsertMessageFull(ctx, convID, uid, req.Content, msgType, req.ReplyTo, req.AtUIDs)
 	if err != nil {
 		s.sendSelf(c, protocol.TypeError, map[string]string{"msg": err.Error()})
 		return
 	}
 	msg := model.Message{
 		MsgID: msgID, ConvID: convID, SenderUID: uid, Seq: seq,
-		Content: req.Content, Type: msgType, CreatedAt: time.Now(),
+		Content: req.Content, Type: msgType, ReplyTo: req.ReplyTo,
+		AtUIDs: req.AtUIDs, CreatedAt: time.Now(),
+	}
+	// 引用回复：装配被引消息摘要，接收方直接渲染引用块
+	if req.ReplyTo > 0 {
+		if q, e := s.store.GetMessageByID(ctx, req.ReplyTo); e == nil {
+			msg.Quote = &model.Quote{MsgID: q.MsgID, SenderUID: q.SenderUID, Content: q.Content}
+		}
+	}
+	// 附件：先落库再随消息体推给接收方
+	for _, f := range req.Files {
+		_ = s.store.AddAttachment(ctx, msgID, model.Attachment{Name: f.Name, Mime: f.Mime, Size: f.Size, URL: f.URL})
+		msg.Files = append(msg.Files, model.Attachment{Name: f.Name, Mime: f.Mime, Size: f.Size, URL: f.URL})
 	}
 	// 热点水位线（旁路缓存）
 	s.cache.SetLatestSeq(ctx, convID, seq)
@@ -167,6 +194,16 @@ func (s *Service) Send(c *ws.Client, req protocol.SendReq) {
 		} else {
 			s.cache.PushOffline(ctx, m, convID, msgID) // 离线消息环（RingBuffer）
 		}
+	}
+	// @提及：给被 @ 的人落一条通知（与业务消息分流）
+	for _, at := range req.AtUIDs {
+		if at == uid {
+			continue
+		}
+		_ = s.store.AddNotification(ctx, at, model.Notification{
+			Type: "mention", Title: "有人 @ 了你",
+			Body: truncate(req.Content, 60), ConvID: convID, MsgID: msgID,
+		})
 	}
 }
 
@@ -260,7 +297,12 @@ func (s *Service) ListMembers(convID int64) ([]model.User, error) {
 }
 
 func (s *Service) PullHistory(convID, beforeSeq int64, limit int) ([]model.Message, error) {
-	return s.store.ListMessages(context.Background(), convID, beforeSeq, limit)
+	ctx := context.Background()
+	msgs, err := s.store.ListMessages(ctx, convID, beforeSeq, limit)
+	if err == nil {
+		s.decorate(ctx, msgs, 0) // 装配引用块 / 表情 / 附件
+	}
+	return msgs, err
 }
 
 func (s *Service) Receipt(convID, msgID int64) (model.Receipt, error) {

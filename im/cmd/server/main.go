@@ -29,6 +29,10 @@ func main() {
 	if _, _, err := store.SeedDemo(context.Background()); err != nil {
 		log.Printf("warn: seed demo: %v", err)
 	}
+	// 组织架构（部门 / 职位 / 邮箱）幂等初始化，供通讯录页使用
+	if err := store.SeedOrg(context.Background()); err != nil {
+		log.Printf("warn: seed org: %v", err)
+	}
 
 	cache := db.NewCache(cfg.RedisAddr, cfg.RedisPass, cfg.RedisDB, cfg.OfflineRingCap)
 	if err := cache.Ping(context.Background()); err != nil {

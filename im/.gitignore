@@ -1,5 +1,2 @@
-/imserver
-/cyberspace-im
-*.exe
-.env
-mysql-data/
+web/uploads/
+*.log

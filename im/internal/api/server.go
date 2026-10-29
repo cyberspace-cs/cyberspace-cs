@@ -1,133 +1,113 @@
 // Package api 暴露 HTTP REST 接口与 WebSocket 升级入口。
 //
-// 路由约定（便于 nginx 在 /im 下反代）：
-//   GET  /api/healthz              健康检查
-//   GET  /api/conversations?uid=   会话列表（带未读水位线）
-//   GET  /api/messages?conv_id=&before_seq=&limit=  拉历史
-//   GET  /api/receipt?conv_id=&msg_id=             查某条消息已读回执
-//   POST /api/seed                 灌入演示数据
-//   GET  /ws                        WebSocket 长连接
-//   /*                             静态前端
+// 路由约定（全部挂在 /api 下，便于 nginx 在 /im 前缀反代）：
+//
+//	POST /api/auth/login            换取 token（教学版：选身份即登录）
+//	POST /api/auth/logout
+//	GET  /api/auth/me               当前身份
+//
+//	GET  /api/conversations         会话列表（置顶/免打扰/@我/未读）
+//	POST /api/conversations         建单聊或群聊
+//	POST /api/conversations/members 加人 / 踢人 / 退群
+//	POST /api/conversations/settings 置顶 / 免打扰 / 标记未读
+//
+//	GET  /api/messages              before_seq 往前翻 / after_seq 增量拉
+//	POST /api/messages/recall       撤回（2 分钟内）
+//	POST /api/messages/reaction     表情回应
+//	POST /api/messages/forward      转发
+//
+//	GET  /api/receipt               已读回执（支持分页）
+//	GET  /api/unread/summary        未读汇总（图标红点 + tab 计数）
+//	GET  /api/search                全局搜索
+//	GET  /api/mentions              @我的消息
+//	GET  /api/read/state            多端已读位置
+//
+//	GET  /api/user                  用户名片
+//	GET  /api/org/tree              组织架构树
+//	GET  /api/presence              会话内在线成员
+//
+//	POST /api/upload                图片 / 文件上传
+//	GET  /api/notifications         通知中心
+//	POST /api/notifications/read    全部已读
+//
+//	GET  /api/healthz               健康检查
+//	GET  /ws                        WebSocket 长连接
+//	/*                              静态前端
 package api
 
 import (
-	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/websocket"
 
 	"github.com/cyberspace-cs/im/internal/service"
-	"github.com/cyberspace-cs/im/internal/ws"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true }, // 教学环境放行跨域
+// Server 持有业务层，路由与 handler 都是它的方法。
+type Server struct {
+	svc      *service.Service
+	upgrader websocket.Upgrader
 }
 
 // NewServer 构造 HTTP handler（含 REST、WS、静态资源）。
 func NewServer(svc *service.Service) http.Handler {
+	s := &Server{
+		svc: svc,
+		upgrader: websocket.Upgrader{
+			ReadBufferSize:  4096,
+			WriteBufferSize: 4096,
+			// 教学环境放行跨域；生产应校验 Origin 白名单
+			CheckOrigin: func(r *http.Request) bool { return true },
+		},
+	}
+
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/api/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"ok"}`))
-	})
+	// 认证
+	mux.HandleFunc("/api/auth/login", s.handleLogin)
+	mux.HandleFunc("/api/auth/logout", s.handleLogout)
+	mux.HandleFunc("/api/auth/me", s.handleMe)
 
-	mux.HandleFunc("/api/conversations", func(w http.ResponseWriter, r *http.Request) {
-		uid, _ := strconv.ParseInt(r.URL.Query().Get("uid"), 10, 64)
-		if uid == 0 {
-			http.Error(w, "uid required", 400)
-			return
-		}
-		list, err := svc.ListConversations(uid)
-		writeJSON(w, list, err)
-	})
+	// 会话
+	mux.HandleFunc("/api/conversations", s.handleConversations)
+	mux.HandleFunc("/api/conversations/members", s.handleConvMembers)
+	mux.HandleFunc("/api/conversations/settings", s.handleConvSettings)
+	mux.HandleFunc("/api/members", s.handleMembers)
 
-	mux.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
-		users, err := svc.ListUsers()
-		writeJSON(w, users, err)
-	})
+	// 消息
+	mux.HandleFunc("/api/messages", s.handleMessages)
+	mux.HandleFunc("/api/messages/recall", s.handleRecall)
+	mux.HandleFunc("/api/messages/reaction", s.handleReaction)
+	mux.HandleFunc("/api/messages/forward", s.handleForward)
+	mux.HandleFunc("/api/receipt", s.handleReceipt)
 
-	mux.HandleFunc("/api/members", func(w http.ResponseWriter, r *http.Request) {
-		convID, _ := strconv.ParseInt(r.URL.Query().Get("conv_id"), 10, 64)
-		if convID == 0 {
-			http.Error(w, "conv_id required", 400)
-			return
-		}
-		members, err := svc.ListMembers(convID)
-		writeJSON(w, members, err)
-	})
+	// 聚合查询
+	mux.HandleFunc("/api/unread/summary", s.handleUnreadSummary)
+	mux.HandleFunc("/api/search", s.handleSearch)
+	mux.HandleFunc("/api/mentions", s.handleMentions)
+	mux.HandleFunc("/api/read/state", s.handleReadState)
+	mux.HandleFunc("/api/presence", s.handlePresence)
 
-	mux.HandleFunc("/api/messages", func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-		convID, _ := strconv.ParseInt(q.Get("conv_id"), 10, 64)
-		before, _ := strconv.ParseInt(q.Get("before_seq"), 10, 64)
-		limit, _ := strconv.Atoi(q.Get("limit"))
-		if convID == 0 {
-			http.Error(w, "conv_id required", 400)
-			return
-		}
-		msgs, err := svc.PullHistory(convID, before, limit)
-		writeJSON(w, msgs, err)
-	})
+	// 人与组织
+	mux.HandleFunc("/api/users", s.handleUsers)
+	mux.HandleFunc("/api/user", s.handleUser)
+	mux.HandleFunc("/api/org/tree", s.handleOrgTree)
 
-	mux.HandleFunc("/api/receipt", func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-		convID, _ := strconv.ParseInt(q.Get("conv_id"), 10, 64)
-		msgID, _ := strconv.ParseInt(q.Get("msg_id"), 10, 64)
-		if convID == 0 || msgID == 0 {
-			http.Error(w, "conv_id & msg_id required", 400)
-			return
-		}
-		rc, err := svc.Receipt(convID, msgID)
-		writeJSON(w, rc, err)
-	})
+	// 上传 / 通知
+	mux.HandleFunc("/api/upload", s.handleUpload)
+	mux.HandleFunc("/api/notifications", s.handleNotifications)
+	mux.HandleFunc("/api/notifications/read", s.handleNotificationsRead)
 
-	mux.HandleFunc("/api/seed", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "POST only", 405)
-			return
-		}
-		p, g, err := svc.Seed()
-		writeJSON(w, map[string]int64{"p2p_conv": p, "group_conv": g}, err)
-	})
+	// 运维 / 演示数据
+	mux.HandleFunc("/api/healthz", s.handleHealthz)
+	mux.HandleFunc("/api/seed", s.handleSeed)
+	mux.HandleFunc("/api/seed_big", s.handleSeedBig)
+	mux.HandleFunc("/api/seed_org", s.handleSeedOrg)
 
-	mux.HandleFunc("/api/seed_big", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "POST only", 405)
-			return
-		}
-		n, _ := strconv.Atoi(r.URL.Query().Get("n"))
-		if n <= 0 {
-			n = 50
-		}
-		g, err := svc.SeedBig(n)
-		writeJSON(w, map[string]interface{}{"group_conv": g, "members": n}, err)
-	})
-
-	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			return
-		}
-		// 先启动收发协程（才能收到 login），注册入网推迟到登录确定 uid 之后
-		c := ws.NewClient(svc.Hub(), 0, conn)
-		c.Start()
-	})
+	// WebSocket
+	mux.HandleFunc("/ws", s.handleWS)
 
 	// 静态前端
 	mux.Handle("/", http.FileServer(http.Dir("web")))
 	return mux
-}
-
-func writeJSON(w http.ResponseWriter, v interface{}, err error) {
-	w.Header().Set("Content-Type", "application/json")
-	if err != nil {
-		w.WriteHeader(500)
-		_, _ = w.Write([]byte(`{"error":"` + err.Error() + `"}`))
-		return
-	}
-	b, _ := json.Marshal(v)
-	_, _ = w.Write(b)
 }

@@ -10,10 +10,15 @@ USE im;
 
 -- 用户表 ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
-  uid      BIGINT       PRIMARY KEY,
-  name     VARCHAR(64)  NOT NULL,
-  avatar   VARCHAR(256),
-  created_at DATETIME   DEFAULT CURRENT_TIMESTAMP
+  uid        BIGINT       PRIMARY KEY,
+  name       VARCHAR(64)  NOT NULL,
+  avatar     VARCHAR(256),
+  dept       VARCHAR(64)  DEFAULT '' COMMENT '部门名（冗余，列表直接展示）',
+  dept_id    BIGINT       DEFAULT 0  COMMENT '部门 id（组织架构树）',
+  dept_title VARCHAR(64)  DEFAULT '' COMMENT '职位',
+  email      VARCHAR(128) DEFAULT '',
+  phone      VARCHAR(32)  DEFAULT '',
+  created_at DATETIME     DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 -- 会话表 ---------------------------------------------------------------------
@@ -43,7 +48,10 @@ CREATE TABLE IF NOT EXISTS messages (
   sender_uid BIGINT      NOT NULL,
   seq        BIGINT      NOT NULL,
   content    TEXT,
-  msg_type   TINYINT     DEFAULT 1,
+  msg_type   TINYINT     DEFAULT 1 COMMENT '1=文本 2=图片 3=文件',
+  reply_to   BIGINT      DEFAULT 0 COMMENT '引用回复的消息 id',
+  at_uids    VARCHAR(512) DEFAULT '' COMMENT '被 @ 的 uid，逗号分隔',
+  recalled   TINYINT     DEFAULT 0 COMMENT '1=已撤回（内容置空，保留占位）',
   created_at DATETIME    DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uniq_conv_seq (conv_id, seq),
   KEY idx_conv_seq (conv_id, seq)
@@ -81,3 +89,70 @@ CREATE TABLE IF NOT EXISTS user_msg_read_cold (
   read_at   DATETIME,
   KEY idx_conv (conv_id)
 ) ENGINE=InnoDB COMMENT='回执冷归档（>7天）';
+
+-- ============================================================================
+-- v2：会话个性化 / 表情回应 / 附件 / 通知 / 登录态 / 组织架构
+-- ============================================================================
+
+-- 会话个性化设置（置顶 / 免打扰 / 手动标记未读）------------------------------
+-- 一人一会话一行，读多写少，可整体缓存进 Redis Hash。
+CREATE TABLE IF NOT EXISTS conv_settings (
+  uid        BIGINT  NOT NULL,
+  conv_id    BIGINT  NOT NULL,
+  pinned     TINYINT DEFAULT 0 COMMENT '置顶',
+  muted      TINYINT DEFAULT 0 COMMENT '免打扰（只显示小红点不显示数字）',
+  marked_unread TINYINT DEFAULT 0 COMMENT '手动标记未读',
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (uid, conv_id)
+) ENGINE=InnoDB;
+
+-- 表情回应（飞书气泡下方那一排）---------------------------------------------
+CREATE TABLE IF NOT EXISTS reactions (
+  msg_id     BIGINT      NOT NULL,
+  uid        BIGINT      NOT NULL,
+  emoji      VARCHAR(32) NOT NULL,
+  created_at DATETIME    DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (msg_id, uid, emoji),
+  KEY idx_msg (msg_id)
+) ENGINE=InnoDB;
+
+-- 附件（图片 / 文件消息）-----------------------------------------------------
+CREATE TABLE IF NOT EXISTS attachments (
+  id      BIGINT       PRIMARY KEY AUTO_INCREMENT,
+  msg_id  BIGINT       NOT NULL,
+  name    VARCHAR(255) DEFAULT '',
+  mime    VARCHAR(128) DEFAULT '',
+  size    BIGINT       DEFAULT 0,
+  url     VARCHAR(512) DEFAULT '',
+  KEY idx_msg (msg_id)
+) ENGINE=InnoDB;
+
+-- 通知中心（与业务消息分流，避免污染会话列表）--------------------------------
+CREATE TABLE IF NOT EXISTS notifications (
+  id         BIGINT       PRIMARY KEY AUTO_INCREMENT,
+  uid        BIGINT       NOT NULL,
+  ntype      VARCHAR(32)  DEFAULT '',
+  title      VARCHAR(128) DEFAULT '',
+  body       VARCHAR(512) DEFAULT '',
+  conv_id    BIGINT       DEFAULT 0,
+  msg_id     BIGINT       DEFAULT 0,
+  read_at    DATETIME     NULL,
+  created_at DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_uid (uid, id)
+) ENGINE=InnoDB;
+
+-- 登录态（简易 token，教学用；生产应换 JWT + 刷新令牌）-----------------------
+CREATE TABLE IF NOT EXISTS sessions (
+  token      VARCHAR(64) PRIMARY KEY,
+  uid        BIGINT      NOT NULL,
+  created_at DATETIME    DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_uid (uid)
+) ENGINE=InnoDB;
+
+-- 部门（组织架构树）----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS departments (
+  dept_id   BIGINT      PRIMARY KEY,
+  name      VARCHAR(64) NOT NULL,
+  parent_id BIGINT      DEFAULT 0,
+  sort      INT         DEFAULT 0
+) ENGINE=InnoDB;
