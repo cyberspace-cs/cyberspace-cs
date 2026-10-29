@@ -120,6 +120,8 @@ async function refreshConvs() {
   const list = await getJSON('conversations?uid=' + state.uid);
   state.convs = {};
   list.forEach((c) => (state.convs[c.conv_id] = c));
+  // 当前正在看的会话恒为已读（服务端 read 可能尚未落库，避免刷新把红点又贴回来）
+  if (state.active && state.convs[state.active]) state.convs[state.active].unread = 0;
   renderConvList();
   if (!state.active && list.length) openConv(list[0].conv_id);
 }
@@ -164,6 +166,12 @@ function renderConvList() {
 async function openConv(convId) {
   state.active = convId;
   const c = state.convs[convId];
+  // 打开即清零红点：先本地置 0，避免加载期间角标还在（服务端 unread 回推作兜底）
+  if (c) {
+    c.read_seq = Math.max(c.read_seq || 0, c.latest_seq || 0);
+    c.unread = 0;
+    renderConvList();
+  }
   $('chatName').textContent = c.type === 2 ? (c.title || '群聊') : nameOf(c.last_sender_uid || convId);
   $('chatMeta').textContent = c.type === 2 ? `${c.member_cnt} 人` : '单聊';
   // 加载成员（用于头像、回执详情）
@@ -172,7 +180,8 @@ async function openConv(convId) {
     renderHeadAvatars();
   } catch (e) { /* ignore */ }
   const msgs = await getJSON(`messages?conv_id=${convId}&before_seq=999999999&limit=50`);
-  state.msgs[convId] = msgs;
+  // 接口按 seq 倒序返回（便于游标翻页），展示时必须转成正序，否则最新消息跑到最上面
+  state.msgs[convId] = msgs.slice().sort((a, b) => a.seq - b.seq);
   renderMessages();
   renderMemberPanel();
   $('msgInput').disabled = false;
@@ -180,12 +189,6 @@ async function openConv(convId) {
   $('composerTip').textContent = c.is_big ? '超大群：已降级，仅推进红点、不维护精确单条回执'
     : '消息已开启单条已读回执（飞书式）';
   sendRead(convId, c.latest_seq); // 打开即已读 -> 触发服务端给发送者回执
-  // 乐观清零红点：不依赖服务端 unread 回推（首连订阅存在毫秒级竞态）
-  if (c) {
-    c.read_seq = Math.max(c.read_seq || 0, c.latest_seq || 0);
-    c.unread = 0;
-  }
-  renderConvList();
 }
 
 function renderHeadAvatars() {

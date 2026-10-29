@@ -4,7 +4,9 @@
 services:
   mysql:
     image: mysql:8.0
+    command: --default-time-zone=+08:00
     environment:
+      TZ: Asia/Shanghai
       MYSQL_ROOT_PASSWORD: rootpass
       MYSQL_DATABASE: im
     ports:
@@ -30,6 +32,7 @@ services:
       redis:
         condition: service_started
     environment:
+      TZ: Asia/Shanghai
       HTTP_ADDR: ":8080"
       MYSQL_DSN: "root:rootpass@tcp(mysql:3306)/im?parseTime=true&charset=utf8mb4&loc=Local"
       REDIS_ADDR: "redis:6379"

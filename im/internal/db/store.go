@@ -264,7 +264,8 @@ func (s *Store) ListConversationsForUser(ctx context.Context, uid int64, bigThre
 		 LEFT JOIN user_conv_read r ON r.conv_id=c.conv_id AND r.uid=?
 		 JOIN conversation_members cm2 ON cm2.conv_id=c.conv_id
 		 WHERE cm.uid=?
-		 GROUP BY c.conv_id`, uid, uid)
+		 GROUP BY c.conv_id
+		 ORDER BY COALESCE((SELECT MAX(m.created_at) FROM messages m WHERE m.conv_id=c.conv_id), c.created_at) DESC`, uid, uid)
 	if err != nil {
 		return nil, err
 	}
