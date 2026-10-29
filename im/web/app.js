@@ -76,10 +76,24 @@ function doLogin(uid) {
   refreshConvs();
 }
 
+// 统一 WS 发送：业务字段必须嵌套在 data 里（与服务端 Envelope{Type,Data} 对齐）
+function wsSend(type, data) {
+  if (state.ws && state.ws.readyState === 1) {
+    state.ws.send(JSON.stringify({ type, data }));
+  }
+}
+
 function connectWS() {
   if (state.ws) state.ws.close();
   state.ws = new WebSocket(WS_URL);
-  state.ws.onopen = () => state.ws.send(JSON.stringify({ type: 'login', uid: state.uid }));
+  state.ws.onopen = () => {
+    wsSend('login', { uid: state.uid });
+    // WS 就绪后补推当前会话已读：防止 openConv 早于 onopen 导致漏发 read（登录瞬间竞态）
+    if (state.active) {
+      const c = state.convs[state.active];
+      if (c) sendRead(state.active, c.latest_seq);
+    }
+  };
   state.ws.onclose = () => { /* 教学演示不自动重连 */ };
   state.ws.onmessage = (e) => handle(JSON.parse(e.data));
 }
@@ -342,13 +356,12 @@ function onReceipt(r) {
 
 // ---------- 发送 ----------
 function sendRead(convId, seq) {
-  if (state.ws && state.ws.readyState === 1)
-    state.ws.send(JSON.stringify({ type: 'read', conv_id: convId, seq }));
+  wsSend('read', { conv_id: convId, seq });
 }
 function send() {
   const txt = $('msgInput').value.trim();
   if (!txt || !state.ws) return;
-  state.ws.send(JSON.stringify({ type: 'send', conv_id: state.active, content: txt, client_id: 'c' + Date.now() }));
+  wsSend('send', { conv_id: state.active, content: txt, client_id: 'c' + Date.now() });
   $('msgInput').value = '';
   autoGrow();
 }
@@ -360,6 +373,7 @@ function autoGrow() {
 
 // ---------- 绑定 ----------
 async function boot() {
+  window.state = state; // 暴露便于调试 / 自动化（教学项目无妨）
   state.users = await getJSON('users');
   renderLoginUsers();
 

@@ -2,6 +2,8 @@
    cyberspace-cs 飞书式 IM 前端 · 设计令牌对齐飞书桌面客户端（浅色主题）
    品牌色 #3370FF · 主文字 #1F2329 · 次文字 #646A73 · 边框 #DEE0E3
    ========================================================================= */
+/* 全局：尊重 hidden 属性（class 里的 display 不能盖过它，否则登录遮罩/弹窗会拦截点击） */
+[hidden]{display:none !important;}
 :root{
   --fs-brand:#3370FF;
   --fs-brand-hover:#245BDB;
