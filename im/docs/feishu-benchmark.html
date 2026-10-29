@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>飞书页面全景 · 我们缺什么</title>
+<style>
+:root{
+  --brand:#3370FF; --brand-d:#245BDB; --brand-soft:#EAF0FF; --brand-line:#C6DAFF;
+  --ink:#1F2329; --ink2:#646A73; --ink3:#8F959E; --line:#DEE0E3; --line2:#EFF0F1;
+  --bg:#F5F6F7; --white:#fff; --red:#F54A45; --green:#2EA121; --orange:#FF8800;
+  --r:8px; --shadow:0 2px 10px rgba(31,35,41,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+
+/* ---------- 封面 ---------- */
+.hero{background:linear-gradient(135deg,#1F2329 0%,#2B3A55 55%,#1E3A6E 100%);color:#fff;padding:64px 0 56px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(51,112,255,.55),transparent 62%)}
+.hero .wrap{position:relative;z-index:1}
+.kicker{font-size:12px;letter-spacing:.14em;color:#9DC0FF;text-transform:uppercase;margin-bottom:16px}
+.hero h1{font-size:40px;line-height:1.25;letter-spacing:-.5px;font-weight:700}
+.hero h1 em{font-style:normal;color:#8FB4FF}
+.hero p{margin-top:16px;color:#C9D6E8;font-size:15px;max-width:720px}
+.stats{display:flex;gap:36px;margin-top:32px;flex-wrap:wrap}
+.stat b{display:block;font-size:30px;font-weight:700;letter-spacing:-.5px}
+.stat span{font-size:12px;color:#9FB0C6}
+
+/* ---------- 通用段落 ---------- */
+section{padding:56px 0}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
+.sec-num{font:600 12px/1 ui-monospace,Menlo,monospace;color:var(--brand);background:var(--brand-soft);border-radius:6px;padding:6px 9px}
+h2{font-size:25px;letter-spacing:-.3px}
+.lead{color:var(--ink2);margin-bottom:30px;max-width:820px}
+h3{font-size:16px;margin-bottom:10px}
+
+/* ---------- 页面卡片墙 ---------- */
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.card .thumb{background:#EDEFF2;border-bottom:1px solid var(--line2);line-height:0}
+.card .thumb img{width:100%;display:block}
+.card .body{padding:16px 18px 18px}
+.card .top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.card .top h4{font-size:15px;font-weight:600}
+.chip{font-size:11px;border-radius:4px;padding:2px 7px;font-weight:500;white-space:nowrap}
+.chip.ok{background:#E8F7E8;color:#1E7B1E}
+.chip.no{background:#FFF0EF;color:#C0392B}
+.chip.part{background:#FFF6E6;color:#B26A00}
+.chip.info{background:var(--brand-soft);color:var(--brand-d)}
+.card p{font-size:13px;color:var(--ink2);line-height:1.65}
+
+/* ---------- 逐页拆解 ---------- */
+.page{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:24px;margin-bottom:22px}
+.page .ph{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.page .idx{width:26px;height:26px;border-radius:6px;background:var(--ink);color:#fff;font:600 12px/26px ui-monospace,monospace;text-align:center;flex:none}
+.page h3{margin:0;font-size:17px}
+.page .sub{color:var(--ink3);font-size:12.5px;margin-bottom:16px;padding-left:38px}
+.page .row{display:grid;grid-template-columns:1.4fr 1fr;gap:22px;align-items:start}
+.page img{width:100%;border:1px solid var(--line);border-radius:8px;display:block}
+.kv{font-size:13px}
+.kv dt{color:var(--ink3);font-size:11.5px;margin-top:12px;letter-spacing:.02em}
+.kv dt:first-child{margin-top:0}
+.kv dd{color:var(--ink);line-height:1.6}
+.kv dd code{font:12px/1.5 ui-monospace,Menlo,monospace;background:var(--bg);border:1px solid var(--line2);border-radius:4px;padding:1px 5px}
+.gap{margin-top:14px;background:#FFFBF3;border-left:3px solid var(--orange);border-radius:0 6px 6px 0;padding:10px 14px;font-size:12.5px;color:#6B4A00}
+.gap b{color:#B26A00}
+
+/* ---------- 表格 ---------- */
+table{width:100%;border-collapse:separate;border-spacing:0;background:var(--white);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:13px}
+th:first-child{border-radius:10px 0 0 0}th:last-child{border-radius:0 10px 0 0}
+th{background:#FAFBFC;text-align:left;font-weight:600;color:var(--ink2);font-size:12px;letter-spacing:.02em;padding:10px 12px;border-bottom:1px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid var(--line2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#FCFDFF}
+code.m{font:12px ui-monospace,Menlo,monospace;color:var(--brand-d);background:var(--brand-soft);border-radius:4px;padding:1px 5px;white-space:nowrap}
+.p0{color:#C0392B;font-weight:600}.p1{color:#B26A00;font-weight:600}.p2{color:var(--ink3);font-weight:600}
+.muted{color:var(--ink3)}
+
+/* ---------- 令牌对照 ---------- */
+.tokens{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.token-box{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:18px}
+.sw{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:12.5px}
+.sw i{width:22px;height:22px;border-radius:5px;border:1px solid rgba(31,35,41,.08);flex:none}
+.sw span:first-of-type{flex:1;color:var(--ink)}
+.sw span:last-of-type{font:11.5px ui-monospace,monospace;color:var(--ink3)}
+
+/* ---------- 路线图 ---------- */
+.road{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:8px}
+.sprint{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:16px;position:relative}
+.sprint b{display:block;font-size:12px;color:var(--brand);letter-spacing:.08em;margin-bottom:6px}
+.sprint h4{font-size:14px;margin-bottom:10px}
+.sprint ul{list-style:none;font-size:12.5px;color:var(--ink2)}
+.sprint li{padding:3px 0 3px 12px;position:relative}
+.sprint li::before{content:"";position:absolute;left:0;top:10px;width:4px;height:4px;border-radius:50%;background:var(--brand-line)}
+
+footer{padding:40px 0 60px;color:var(--ink3);font-size:12.5px;border-top:1px solid var(--line);margin-top:20px}
+@media(max-width:900px){.grid,.page .row,.tokens,.road{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="kicker">Competitive Teardown · 2026-10</div>
+    <h1>飞书长什么样<br><em>以及我们的 IM 还缺什么</em></h1>
+    <p>把飞书桌面端 8 个一级页面逐个拆开看：布局怎么分栏、组件怎么摆、每个界面背后要几个后端接口。最后得出我们这套 Redis + MySQL 的 IM 还差哪些 API 才撑得起同样一个界面。</p>
+    <div class="stats">
+      <div class="stat"><b>8</b><span>一级页面</span></div>
+      <div class="stat"><b>9</b><span>我们已实现接口</span></div>
+      <div class="stat"><b>19</b><span>缺口接口</span></div>
+      <div class="stat"><b>4</b><span>P0 阻断项</span></div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">01</span><h2>页面全景</h2></div>
+    <p class="lead">飞书桌面端左侧是一根 68px 的深色图标栏，把产品切成 8 个互不干扰的空间。要点是：<b>只有「消息」是实时流，其余都是结构化数据页</b>。我们的项目只做了第 1 个。</p>
+    <div class="grid">
+
+      <div class="card">
+        <div class="thumb"><img src="screenshots/feishu/01-messenger.png" alt="消息"></div>
+        <div class="body">
+          <div class="top"><h4>01 消息</h4><span class="chip part">已实现 · 简化版</span></div>
+          <p>三栏：图标栏 68 / 会话列表 300 / 聊天区自适应 + 右侧 40px 工具条。会话列表顶部有「全部 · @我 1 · 未读 4 · 云文档 · 更多」五个筛选 tab。</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="thumb"><img src="screenshots/feishu/02-calendar.png" alt="日历"></div>
+        <div class="body">
+          <div class="top"><h4>02 日历</h4><span class="chip no">未实现</span></div>
+          <p>左侧迷你月历 + 日历分组（我的日历/订阅），主区是周视图时间轴，右侧浮层是「新建日程」。日程块按日历着色，支持「忙碌/空闲」。 </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="thumb"><img src="screenshots/feishu/03-docs.png" alt="云文档"></div>
+        <div class="body">
+          <div class="top"><h4>03 云文档</h4><span class="chip no">未实现</span></div>
+          <p>块编辑器 + 顶部协作者头像堆叠 + 分享/权限下拉 + 右侧评论栏（评论 22 条）。行内有 @人 的彩色标签，正文段落有实时协作光标。</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="thumb"><img src="screenshots/feishu/04-wiki.png" alt="知识库"></div>
+        <div class="body">
+          <div class="top"><h4>04 知识库</h4><span class="chip no">未实现</span></div>
+          <p>左栏是「个人置顶 + 页面树」（可展开的层级目录），右栏是文档正文。本质是文档的树形索引 + 权限继承。</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="thumb"><img src="screenshots/feishu/05-base.png" alt="多维表格"></div>
+        <div class="body">
+          <div class="top"><h4>05 多维表格</h4><span class="chip no">未实现</span></div>
+          <p>左侧视图导航（表格/看板/日历/甘特），主区是可筛选排序的数据表，右侧是仪表盘（饼图、折线、漏斗）。一张表撑起一个业务系统。</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="thumb"><img src="screenshots/feishu/06-workbench.png" alt="工作台"></div>
+        <div class="body">
+          <div class="top"><h4>06 工作台 / 审批</h4><span class="chip no">未实现</span></div>
+          <p>顶部一级 tab（工作台 · 审批）+ 二级 tab（发起申请 · 审批中心 · 效率诊断）。主体是应用卡片宫格，不是聊天界面。</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="thumb"><img src="screenshots/feishu/07-video.png" alt="视频会议"></div>
+        <div class="body">
+          <div class="top"><h4>07 视频会议</h4><span class="chip no">未实现</span></div>
+          <p>四宫格视频 + 底部麦克风/摄像头/挂断。旁边叠的是「智能纪要」：AI 总结 + 带时间戳的待办。会议结束产出物回流到文档。</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="thumb"><img src="screenshots/feishu/08-people.png" alt="人事"></div>
+        <div class="body">
+          <div class="top"><h4>08 人事 / 组织</h4><span class="chip no">未实现</span></div>
+          <p>组织架构树（可下钻的汇报线）+ 员工档案卡：工作信息 / 汇报线 / 团队统计 / 个人信息 / 履历 / 绩效 六个 tab。档案卡直接带「发消息」「OKR」按钮。</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">02</span><h2>逐页拆解：消息页</h2></div>
+    <p class="lead">「消息」是唯一值得我们对标的页面，其余 7 个属于另一个产品域。这一页拆到底。</p>
+
+    <div class="page">
+      <div class="ph"><div class="idx">01</div><h3>消息页 · 三栏 + 工具条</h3></div>
+      <div class="sub">飞书桌面端主界面，也是我们唯一对齐的页面</div>
+      <div class="row">
+        <img src="screenshots/feishu/01-messenger.png" alt="消息页">
+        <div class="kv">
+          <dt>分栏（左→右）</dt>
+          <dd>图标栏 <b>68px</b>（深色 #2B2F36，图标 24 + 文字 10）→ 会话列表 <b>300px</b>（白）→ 聊天区自适应 → 工具条 <b>40px</b></dd>
+
+          <dt>顶部标题栏</dt>
+          <dd>高 48px，深色延续图标栏；居中一个极宽的搜索框（跨人/群/消息/文档），左侧历史后退，右侧 <code>+</code> 新建</dd>
+
+          <dt>会话列表顶部</dt>
+          <dd>五个 tab：<b>全部 / @我 1 / 未读 4 / 云文档 / 更多</b>。@我和未读带动数字，是两套独立计数</dd>
+
+          <dt>会话行</dt>
+          <dd>高 <b>64px</b>：40px 圆角头像 + 右上角红色数字胶囊（>99 显示 99+）+ 名称（14/500）+ 右侧时间（12/#8F959E）+ 第二行灰字摘要。选中行底色 <code>#E1EAFF</code>，hover <code>#F2F3F5</code></dd>
+
+          <dt>消息气泡</dt>
+          <dd>他人：浅灰 <code>#F2F3F5</code>、圆角 6px、左上角贴头像；自己：浅蓝 <code>#D6E4FF</code>、右对齐。气泡内可嵌 <b>引用块</b>（左侧竖线 + 被引内容 + 引用人）</dd>
+
+          <dt>输入区</dt>
+          <dd>工具栏在<b>输入框右侧</b>一行：Aa 富文本 / 表情 / @ / 剪贴板 / <code>+</code> 更多 / 全屏 / 发送。输入框有 1px 蓝框聚焦</dd>
+
+          <dt>我们已完成</dt>
+          <dd>三栏布局、气泡配色、已读回执行、回执双列弹窗、未读红点、登录页</dd>
+        </div>
+      </div>
+      <div class="gap">
+        <b>差在哪：</b>① 会话列表缺少「@我 / 未读 / 云文档」筛选 tab（后端没有分类未读接口）；② 消息缺引用回复、表情回应、图片/文件（后端无 upload、无 reaction、无 reply_to）；③ 顶部没有全局搜索（后端无 /search）；④ 会话不能置顶/免打扰（后端无 settings）；⑤ 右侧工具条完全没有（会话内搜索、共享文档、日程都无接口）。
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">03</span><h2>学到的前端规范</h2></div>
+    <p class="lead">把飞书界面里可复用的值抽出来，直接对齐我们的 <code>app.css</code>。左边是飞书，右边是我们的现状。</p>
+
+    <div class="tokens">
+      <div class="token-box">
+        <h3>颜色</h3>
+        <div class="sw"><i style="background:#3370FF"></i><span>品牌蓝 / 主按钮 / 选中态</span><span>#3370FF</span></div>
+        <div class="sw"><i style="background:#1F2329"></i><span>主文字</span><span>#1F2329</span></div>
+        <div class="sw"><i style="background:#646A73"></i><span>次文字 / 图标</span><span>#646A73</span></div>
+        <div class="sw"><i style="background:#8F959E"></i><span>弱文字 / 时间戳</span><span>#8F959E</span></div>
+        <div class="sw"><i style="background:#2B2F36"></i><span>左侧图标栏底色</span><span>#2B2F36</span></div>
+        <div class="sw"><i style="background:#F5F6F7"></i><span>页面底色</span><span>#F5F6F7</span></div>
+        <div class="sw"><i style="background:#F2F3F5"></i><span>他人气泡 / hover</span><span>#F2F3F5</span></div>
+        <div class="sw"><i style="background:#D6E4FF"></i><span>自己气泡</span><span>#D6E4FF</span></div>
+        <div class="sw"><i style="background:#E1EAFF"></i><span>会话选中底色</span><span>#E1EAFF</span></div>
+        <div class="sw"><i style="background:#F54A45"></i><span>未读红点 / 危险</span><span>#F54A45</span></div>
+        <div class="sw"><i style="background:#DEE0E3"></i><span>分割线</span><span>#DEE0E3</span></div>
+        <p style="margin-top:12px;font-size:12.5px;color:var(--ink2)">结论：<b>我们的令牌表已经 1:1 对上</b>，颜色不是差距。</p>
+      </div>
+
+      <div class="token-box">
+        <h3>尺寸与排版</h3>
+        <div class="sw"><i style="background:#fff;border-color:#DEE0E3"></i><span>图标栏宽</span><span>68px</span></div>
+        <div class="sw"><i style="background:#fff;border-color:#DEE0E3"></i><span>会话列表宽</span><span>300px</span></div>
+        <div class="sw"><i style="background:#fff;border-color:#DEE0E3"></i><span>会话行高 / 头像</span><span>64px / 40px</span></div>
+        <div class="sw"><i style="background:#fff;border-color:#DEE0E3"></i><span>正文 / 时间戳</span><span>14px / 12px</span></div>
+        <div class="sw"><i style="background:#fff;border-color:#DEE0E3"></i><span>气泡圆角 / 卡片圆角</span><span>6px / 12px</span></div>
+        <div class="sw"><i style="background:#fff;border-color:#DEE0E3"></i><span>行内左右留白</span><span>16px</span></div>
+        <div class="sw"><i style="background:#fff;border-color:#DEE0E3"></i><span>图标尺寸</span><span>18–24px</span></div>
+        <div class="sw"><i style="background:#fff;border-color:#DEE0E3"></i><span>字重</span><span>400 / 500 / 600</span></div>
+        <p style="margin-top:12px;font-size:12.5px;color:var(--ink2)">飞书<b>不用大圆角、不用彩色渐变</b>，靠留白和 1px 细线分层。我们的 8px 圆角略大，气泡 6px 更贴近。</p>
+      </div>
+    </div>
+
+    <div class="token-box" style="margin-top:18px">
+      <h3>三条交互习惯（比像素更值得学）</h3>
+      <table style="border:none">
+        <thead><tr><th style="width:110px">习惯</th><th>飞书做法</th><th style="width:38%">对我们的含义</th></tr></thead>
+        <tbody>
+          <tr><td><b>已读只对发送者</b></td><td>群消息不显示「谁读了」，只在自己的消息下显示「已读 N」；点开才拉名单</td><td>我们已这么做，但名单接口不分页，500 人群会一次返回全员</td></tr>
+          <tr><td><b>未读分级</b></td><td>左侧图标栏显示总会话未读（49），会话列表 tab 分「未读 4 / @我 1」</td><td>缺一个聚合接口，现在只能前端遍历所有会话求和</td></tr>
+          <tr><td><b>进入即已读</b></td><td>打开会话立刻推进水位线，红点消失，不等服务端回推</td><td>我们已改成乐观清零，方向一致</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">04</span><h2>后端接口缺口</h2></div>
+    <p class="lead">现有 9 个接口（<code>conversations / users / members / messages / receipt / seed / seed_big / healthz / ws</code>）只够跑通「发消息 + 已读」。下面 19 个是对齐飞书界面必须补的。</p>
+
+    <h3 style="margin:26px 0 10px">P0 · 不补就跑不通真实场景</h3>
+    <table>
+      <thead><tr><th style="width:34%">接口</th><th>用途</th><th style="width:26%">为什么是 P0</th></tr></thead>
+      <tbody>
+        <tr><td><code class="m">POST /api/auth/login</code></td><td>uid → token，后续请求带 Authorization</td><td>现在 <code>?uid=3001</code> 明文传，任何人改数字就能冒充</td></tr>
+        <tr><td><code class="m">POST /api/conversations</code></td><td>建单聊/群聊，指定成员</td><td>现在只能靠 <code>/api/seed</code> 造数据，用户无法自己建会话</td></tr>
+        <tr><td><code class="m">GET /api/messages?after_seq=</code></td><td>增量补拉（断线重连、多端同步）</td><td>现在只有 <code>before_seq</code> 往前翻，重连后拿不到中间漏的消息</td></tr>
+        <tr><td><code class="m">POST /api/conversations/{id}/members</code></td><td>加人 / 踢人 / 退群 / 转让群主</td><td>群成员固定，无法运营一个真实的群</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin:26px 0 10px">P1 · 飞书界面上肉眼可见的功能</h3>
+    <table>
+      <thead><tr><th style="width:34%">接口</th><th>用途</th><th style="width:26%">对应飞书界面元素</th></tr></thead>
+      <tbody>
+        <tr><td><code class="m">GET /api/unread/summary?uid=</code></td><td>返回总未读 / 会话数 / @我数 / 单聊未读 / 群未读</td><td>图标栏红点「49」+ 会话列表 tab「未读 4 · @我 1」</td></tr>
+        <tr><td><code class="m">GET /api/search?q=&scope=</code></td><td>跨消息/联系人/会话搜索，带高亮片段</td><td>标题栏居中那个大搜索框</td></tr>
+        <tr><td><code class="m">GET /api/mentions?uid=</code></td><td>@我的消息列表（消息需带 at_uids）</td><td>「@我 1」tab</td></tr>
+        <tr><td><code class="m">POST /api/conversations/{id}/settings</code></td><td>置顶 / 免打扰 / 标记未读</td><td>会话右键菜单、置顶分组</td></tr>
+        <tr><td><code class="m">POST /api/messages/{id}/recall</code></td><td>2 分钟内撤回，广播 recall 事件</td><td>消息 hover 出的「…」菜单</td></tr>
+        <tr><td><code class="m">POST /api/messages/{id}/reaction</code></td><td>表情回应，返回聚合计数</td><td>气泡下方的表情条</td></tr>
+        <tr><td><code class="m">POST /api/upload</code></td><td>图片/文件上传，返回 url + 缩略图</td><td>输入框右侧 <code>+</code> / 剪贴板图标</td></tr>
+        <tr><td><code class="m">GET /api/user/{uid}</code></td><td>用户详情：部门、职位、邮箱、手机</td><td>点头像弹出的名片</td></tr>
+        <tr><td><code class="m">GET /api/org/tree</code></td><td>组织架构树 + 部门成员</td><td>通讯录页、群成员按部门分组</td></tr>
+        <tr><td><code class="m">WS send: reply_to</code></td><td>消息带引用 msg_id，服务端回填被引摘要</td><td>气泡里的引用块（图里「王芳：我之前用过…」）</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin:26px 0 10px">P2 · 有则更好</h3>
+    <table>
+      <thead><tr><th style="width:34%">接口</th><th>用途</th><th style="width:26%">备注</th></tr></thead>
+      <tbody>
+        <tr><td><code class="m">WS typing / presence</code></td><td>「正在输入」、在线状态</td><td>高频小包，走独立 channel 不落库</td></tr>
+        <tr><td><code class="m">GET /api/receipt?offset=&limit=</code></td><td>回执名单分页</td><td>500 人群必须分页，现在一次全返回</td></tr>
+        <tr><td><code class="m">GET /api/read/state?uid=</code></td><td>多端已读位置同步</td><td>水位线已有，缺一个批量读接口</td></tr>
+        <tr><td><code class="m">POST /api/messages/forward</code></td><td>转发 / 合并转发</td><td>需要跨会话写消息 + 权限校验</td></tr>
+        <tr><td><code class="m">POST /api/messages/{id}/pin</code></td><td>收藏 / 会话内置顶</td><td>右侧工具条「置顶」入口</td></tr>
+        <tr><td><code class="m">GET /api/notifications</code></td><td>系统通知中心</td><td>与业务消息分流，避免污染会话列表</td></tr>
+      </tbody>
+    </table>
+
+    <div class="gap" style="margin-top:22px">
+      <b>一句话结论：</b>我们的存储层（扩散读 + 水位线 + 单条回执）是对的，也够用；真正缺的是<b>「写入侧的会话管理」和「读取侧的聚合查询」</b>——建会话、改成员、撤回、上传这些"写"，以及搜索、@我、未读汇总这些"读"。存储模型不用动，加接口即可。
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">05</span><h2>建议落地顺序</h2></div>
+    <p class="lead">按「补一个接口，界面上立刻能看见一块」的顺序排，避免做了一堆接口前端用不上。</p>
+    <div class="road">
+      <div class="sprint">
+        <b>SPRINT 1</b>
+        <h4>先把假的变真的</h4>
+        <ul>
+          <li>auth/login + token 中间件</li>
+          <li>conversations 创建</li>
+          <li>messages after_seq 增量</li>
+          <li>成员增删</li>
+        </ul>
+      </div>
+      <div class="sprint">
+        <b>SPRINT 2</b>
+        <h4>补全会话列表</h4>
+        <ul>
+          <li>unread/summary 聚合</li>
+          <li>@我 + at_uids</li>
+          <li>置顶 / 免打扰</li>
+          <li>tab 切「全部/未读/@我」</li>
+        </ul>
+      </div>
+      <div class="sprint">
+        <b>SPRINT 3</b>
+        <h4>把消息做实</h4>
+        <ul>
+          <li>upload 图片文件</li>
+          <li>reply_to 引用</li>
+          <li>reaction 表情回应</li>
+          <li>recall 撤回</li>
+        </ul>
+      </div>
+      <div class="sprint">
+        <b>SPRINT 4</b>
+        <h4>搜索与组织</h4>
+        <ul>
+          <li>search 全局搜索</li>
+          <li>user/{uid} 名片</li>
+          <li>org/tree 通讯录</li>
+          <li>typing / presence</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    飞书界面截图取自 feishu.cn 官方产品页（2026-10 抓取），仅用于教学对比。接口规划对应 <code>im/internal/api/server.go</code> 现有 9 个路由的缺口分析。
+  </div>
+</footer>
+
+</body>
+</html>
