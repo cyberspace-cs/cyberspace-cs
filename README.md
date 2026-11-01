@@ -67,6 +67,36 @@
 
 ---
 
+## 🧠 最新技术架构：dsh-superagent（主动式 Agent 系统）
+
+> DeepSeek 开源的「主动式 Coding Agent」原型：不是聊天框里的应答者，而是监听仓库 → 自己判断该不该动手 → 开工作项 → 在独立会话里改代码 → 把 PR 送回原对话。
+> 上游 [deepseek-ai/dsh-superagent-prototype](https://github.com/deepseek-ai/dsh-superagent-prototype)（TypeScript · MIT · 5k+ ⭐）｜ 我的镜像与中文导读：[GitHub](https://github.com/cyberspace-cs/dsh-superagent-prototype) · [Gitee](https://gitee.com/buleboy8065/dsh-superagent-prototype)
+
+**核心信条：Take as little human attention as possible, and give as much value as possible.**
+每条通知、每个设置项、每段文档，都要按"消耗了谁多少注意力"来审判——给不出超额价值，就删掉。
+
+```text
+GitHub / 飞书 ──▶ Source ──▶ Trigger ──▶ Thread ──▶ Eval（gate + 评估）
+                                                      │ accept + Mandate
+                                                      ▼
+                        Channel ◀── Outbox ◀── Ticket ──▶ Assignment ──▶ Executor
+                        (评论 / PR)                                    (独立 Session + 独立目录)
+```
+
+| 层 | 关键设计 |
+| --- | --- |
+| 接入 | Source 自持读位置，重启不重放；机器人消息可进上下文，但不能触发新工作 |
+| 授权 | **Mandate 管"凭什么做"，Subscription 管"知不知道"**——相关性永不授予权限 |
+| 内核 | Engine 是 5 个聚合的唯一写者，方法全同步、一命令一事务；副作用统一走 Effects 提交后执行 |
+| 执行 | 一 Ticket 一 Session 一目录（`git worktree`）；前台命令 5 秒转后台；并发槽位外**额外留一个给人** |
+| 汇报 | Ticket 阶段由"在等什么"决定，只有 delivery / answer / review / blocked / failed 才算需要人；健康状态不占版面 |
+
+**为什么值得读**：它把"Agent 别烦人"从口号变成了结构约束——授权与上下文分离、单写者事务、人的插队槽位，这三条在多数 Agent 框架里是缺失的。`docs/001` 末尾那张 **Rejected concepts** 表，比功能列表更能说明取舍。
+
+📄 [中文架构导读：代码分层映射 + 六个可复用机制 + 建议阅读顺序](https://github.com/cyberspace-cs/dsh-superagent-prototype/blob/main/docs/009-architecture-zh.md)
+
+---
+
 ## 🔥 重点方向：Jev × Harness 深度整合
 
 > 参考 mu-agent 黑客松总冠军方案：把大模型的"小决定"全部交给 Jev，大模型只专心干活
