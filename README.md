@@ -1,7 +1,6 @@
 # 👋 Hi, I'm Friday（cyberspace-cs）
 
-> 专注 AI Agent 与 LLM 应用开发的工程师，从 0 到 1 造轮子，也爱拆解前沿开源项目。
-> 独立服务器上跑着 8 个自己上线的产品。
+> 专注 AI Agent 与 LLM 应用开发的工程师
 
 <div align="center">
 
