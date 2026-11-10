@@ -27,8 +27,6 @@
 
 ## 🚀 在线运行的产品
 
-> 全部部署在自己的服务器上，不是 demo，是长期跑着的线上服务。
-
 | 服务 | 地址 | 说明 |
 | --- | --- | --- |
 | 🏠 **个人主页** | [taoxie.vip](https://taoxie.vip/) | 自定义域名，公网可访问 |
@@ -188,36 +186,3 @@ GitHub / 飞书 ──▶ Source ──▶ Trigger ──▶ Thread ──▶ Ev
 | [**night-shift**](https://github.com/cyberspace-cs/night-shift) | [4MaticLab](https://github.com/4MaticLab/night-shift) | — | TypeScript |
 
  **共 97 个**  · 覆盖 Agent 框架 / CLI 工具 / 数据库 / 运维 / 逆向工程等方向 · 均已同步上游最新提交
-
----
-
-## 📊 开源产出
-
-<div align="center">
-
-![Repositories](https://img.shields.io/badge/公开仓库-138-blue)
-![Commits](https://img.shields.io/badge/近一年提交-758-brightgreen)
-![PRs](https://img.shields.io/badge/Pull%20Requests-45-blueviolet)
-![Followers](https://img.shields.io/github/followers/cyberspace-cs?style=social)
-
-</div>
-
-**动态卡片**（数据自动刷新）
-
-<!-- rank-gate:start -->
-
-<!-- 本区块由 rank-gate.py 自动生成，请勿手动编辑 -->
-<!-- 规则：等级 >= A(S/A+/A) 才展示圆环；数据每日自动刷新 -->
-
-<!-- 状态：隐藏等级圆环 -->
-<!-- 指标：commits=824 prs=60 issues=4 reviews=0 stars=5 followers=11 -->
-
-<div align="center">
-
-![cyberspace-cs's GitHub stats](https://github-stats-extended.vercel.app/api?username=cyberspace-cs&show_icons=true&theme=vue&hide_rank=true)
-![Top Langs](https://github-stats-extended.vercel.app/api/top-langs/?username=cyberspace-cs&layout=compact&theme=vue)
-
-</div>
-
-<sub>🔒 当前等级 **B-**（全球前 62.6%），未达 A 门槛，圆环已隐藏 · 更新于 2026-11-10</sub>
-<!-- rank-gate:end -->
