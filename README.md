@@ -191,7 +191,7 @@ GitHub / 飞书 ──▶ Source ──▶ Trigger ──▶ Thread ──▶ Ev
 <!-- 规则：等级 >= A(S/A+/A) 才展示圆环；数据每日自动刷新 -->
 
 <!-- 状态：隐藏等级圆环 -->
-<!-- 指标：commits=830 prs=60 issues=4 reviews=0 stars=5 followers=11 -->
+<!-- 指标：commits=833 prs=60 issues=4 reviews=0 stars=5 followers=11 -->
 
 <div align="center">
 
@@ -200,5 +200,5 @@ GitHub / 飞书 ──▶ Source ──▶ Trigger ──▶ Thread ──▶ Ev
 
 </div>
 
-<sub>🔒 当前等级 **B-**（全球前 62.6%），未达 A 门槛，圆环已隐藏 · 更新于 2026-11-13</sub>
+<sub>🔒 当前等级 **B-**（全球前 62.6%），未达 A 门槛，圆环已隐藏 · 更新于 2026-11-14</sub>
 <!-- rank-gate:end -->
